@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LifeVault</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app">
+    <section id="lockScreen" class="lock-screen">
+      <div class="brand-block">
+        <p class="eyebrow">Personal Safety Vault</p>
+        <h1>LifeVault</h1>
+      </div>
+
+      <form id="unlockForm" class="auth-panel">
+        <h2>Open Vault</h2>
+        <label>
+          <span>Vault Passcode</span>
+          <input id="passcodeInput" type="password" autocomplete="current-password" required>
+        </label>
+        <button class="primary" type="submit">Unlock</button>
+        <p id="authMessage" class="message"></p>
+      </form>
+
+      <form id="emergencyForm" class="auth-panel emergency-auth">
+        <h2>Emergency Access</h2>
+        <label>
+          <span>Emergency PIN</span>
+          <input id="emergencyPinInput" type="password" inputmode="numeric" autocomplete="off">
+        </label>
+        <button class="secondary" type="submit">Open Emergency Card</button>
+        <p id="pinMessage" class="message"></p>
+      </form>
+    </section>
+
+    <section id="vaultScreen" class="vault-screen hidden">
+      <aside class="sidebar">
+        <div>
+          <p class="eyebrow">LifeVault</p>
+          <h1>Vault</h1>
+        </div>
+        <nav class="nav-tabs" aria-label="Vault sections">
+          <button class="nav-button active" type="button" data-section="dashboard">Overview</button>
+          <button class="nav-button" type="button" data-section="emergency">Emergency</button>
+          <button class="nav-button" type="button" data-section="capsules">Time Capsules</button>
+          <button class="nav-button" type="button" data-section="dreams">Dream Patterns</button>
+          <button class="nav-button" type="button" data-section="legacy">Legacy Notes</button>
+          <button class="nav-button" type="button" data-section="memories">Memory Lane</button>
+        </nav>
+        <button id="lockBtn" class="quiet" type="button">Lock Vault</button>
+      </aside>
+
+      <section class="content">
+        <header class="content-header">
+          <div>
+            <p class="eyebrow">Personal Safety and Future Memory System</p>
+            <h2 id="sectionTitle">Overview</h2>
+          </div>
+          <div class="status-strip">
+            <span id="todayText"></span>
+            <span id="recordCountText">0 records</span>
+          </div>
+        </header>
+
+        <section id="dashboardSection" class="section-grid">
+          <article class="metric-panel accent-red">
+            <span>Emergency Profile</span>
+            <strong id="emergencyStatus">Incomplete</strong>
+          </article>
+          <article class="metric-panel accent-amber">
+            <span>Locked Capsules</span>
+            <strong id="lockedCapsuleCount">0</strong>
+          </article>
+          <article class="metric-panel accent-green">
+            <span>Dream Keywords</span>
+            <strong id="keywordCount">0</strong>
+          </article>
+          <article class="metric-panel accent-blue">
+            <span>Total Vault Records</span>
+            <strong id="totalRecordCount">0</strong>
+          </article>
+          <article class="wide-panel">
+            <h3>Priority Snapshot</h3>
+            <div id="prioritySnapshot" class="summary-list"></div>
+          </article>
+          <article class="wide-panel">
+            <h3>Recent Entries</h3>
+            <div id="recentEntries" class="summary-list"></div>
+          </article>
+        </section>
+
+        <section id="emergencySection" class="module hidden">
+          <form id="emergencyProfileForm" class="form-grid">
+            <label>
+              <span>Full Name</span>
+              <input id="fullNameInput" type="text" maxlength="60" required>
+            </label>
+            <label>
+              <span>Blood Group</span>
+              <input id="bloodGroupInput" type="text" maxlength="12">
+            </label>
+            <label>
+              <span>Allergies</span>
+              <input id="allergiesInput" type="text" maxlength="120">
+            </label>
+            <label>
+              <span>Medical Notes</span>
+              <textarea id="medicalNotesInput" rows="3"></textarea>
+            </label>
+            <label>
+              <span>Emergency Contact</span>
+              <input id="contactNameInput" type="text" maxlength="60">
+            </label>
+            <label>
+              <span>Contact Number</span>
+              <input id="contactPhoneInput" type="tel" maxlength="20">
+            </label>
+            <label>
+              <span>Daily Routine</span>
+              <textarea id="routineInput" rows="3"></textarea>
+            </label>
+            <label>
+              <span>Emergency PIN</span>
+              <input id="pinSetupInput" type="password" inputmode="numeric" maxlength="8">
+            </label>
+            <button class="primary" type="submit">Save Emergency Profile</button>
+          </form>
+          <article class="preview-panel">
+            <h3>Emergency Card</h3>
+            <div id="emergencyCard"></div>
+          </article>
+        </section>
+
+        <section id="capsulesSection" class="module hidden">
+          <form id="capsuleForm" class="form-grid compact-form">
+            <label>
+              <span>Title</span>
+              <input id="capsuleTitleInput" type="text" maxlength="80" required>
+            </label>
+            <label>
+              <span>Unlock Date</span>
+              <input id="capsuleDateInput" type="date" required>
+            </label>
+            <label class="span-two">
+              <span>Message</span>
+              <textarea id="capsuleMessageInput" rows="4" required></textarea>
+            </label>
+            <button class="primary" type="submit">Create Capsule</button>
+          </form>
+          <div id="capsuleList" class="record-list"></div>
+        </section>
+
+        <section id="dreamsSection" class="module hidden">
+          <form id="dreamForm" class="form-grid compact-form">
+            <label>
+              <span>Dream Title</span>
+              <input id="dreamTitleInput" type="text" maxlength="80" required>
+            </label>
+            <label>
+              <span>Mood</span>
+              <select id="dreamMoodInput">
+                <option>Calm</option>
+                <option>Curious</option>
+                <option>Happy</option>
+                <option>Anxious</option>
+                <option>Confused</option>
+              </select>
+            </label>
+            <label>
+              <span>Keywords</span>
+              <input id="dreamKeywordsInput" type="text" maxlength="120" placeholder="water, exam, travel">
+            </label>
+            <label class="span-two">
+              <span>Dream Notes</span>
+              <textarea id="dreamNotesInput" rows="4" required></textarea>
+            </label>
+            <button class="primary" type="submit">Add Dream</button>
+          </form>
+          <article class="preview-panel">
+            <h3>Pattern Analyzer</h3>
+            <div id="dreamPatterns" class="pattern-grid"></div>
+          </article>
+          <div id="dreamList" class="record-list"></div>
+        </section>
+
+        <section id="legacySection" class="module hidden">
+          <form id="legacyForm" class="form-grid compact-form">
+            <label>
+              <span>Note Title</span>
+              <input id="legacyTitleInput" type="text" maxlength="80" required>
+            </label>
+            <label>
+              <span>Category</span>
+              <select id="legacyCategoryInput">
+                <option>Family Message</option>
+                <option>Important Instruction</option>
+                <option>Asset Note</option>
+                <option>Personal Wish</option>
+              </select>
+            </label>
+            <label class="span-two">
+              <span>Note</span>
+              <textarea id="legacyMessageInput" rows="4" required></textarea>
+            </label>
+            <button class="primary" type="submit">Save Legacy Note</button>
+          </form>
+          <div id="legacyList" class="record-list"></div>
+        </section>
+
+        <section id="memoriesSection" class="module hidden">
+          <form id="memoryForm" class="form-grid compact-form">
+            <label>
+              <span>Memory Title</span>
+              <input id="memoryTitleInput" type="text" maxlength="80" required>
+            </label>
+            <label>
+              <span>Category</span>
+              <select id="memoryCategoryInput">
+                <option>Achievement</option>
+                <option>Lesson</option>
+                <option>Gratitude</option>
+                <option>Goal</option>
+                <option>Promise</option>
+              </select>
+            </label>
+            <label class="span-two">
+              <span>Memory</span>
+              <textarea id="memoryMessageInput" rows="4" required></textarea>
+            </label>
+            <button class="primary" type="submit">Add Memory</button>
+          </form>
+          <div id="memoryList" class="record-list"></div>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="emergencyDialog" class="emergency-dialog">
+    <h2>Emergency Card</h2>
+    <div id="emergencyDialogContent"></div>
+    <button id="closeEmergencyDialog" class="primary" type="button">Close</button>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>

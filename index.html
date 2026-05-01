@@ -24,15 +24,11 @@
         <p id="authMessage" class="message"></p>
       </form>
 
-      <form id="emergencyForm" class="auth-panel emergency-auth">
+      <section class="auth-panel emergency-auth">
         <h2>Emergency Access</h2>
-        <label>
-          <span>Emergency PIN</span>
-          <input id="emergencyPinInput" type="password" inputmode="numeric" autocomplete="off">
-        </label>
-        <button class="secondary" type="submit">Open Emergency Card</button>
-        <p id="pinMessage" class="message"></p>
-      </form>
+        <p class="helper-text">Open only the emergency card. Private vault records stay locked.</p>
+        <button id="emergencyAccessBtn" class="secondary" type="button">Open Emergency Card</button>
+      </section>
     </section>
 
     <section id="vaultScreen" class="vault-screen hidden">
@@ -120,10 +116,6 @@
             <label>
               <span>Daily Routine</span>
               <textarea id="routineInput" rows="3"></textarea>
-            </label>
-            <label>
-              <span>Emergency PIN</span>
-              <input id="pinSetupInput" type="password" inputmode="numeric" maxlength="8">
             </label>
             <button class="primary" type="submit">Save Emergency Profile</button>
           </form>

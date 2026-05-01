@@ -163,6 +163,12 @@ h3 {
   font-weight: 700;
 }
 
+.helper-text {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
 .primary {
   background: var(--teal);
   color: #fff;

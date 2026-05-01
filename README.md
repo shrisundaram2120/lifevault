@@ -4,7 +4,7 @@ LifeVault is a personal safety, memory, and future-message vault.
 
 It includes:
 
-- Emergency profile and quick emergency PIN access
+- Emergency profile with quick access that does not require the vault passcode
 - Date-locked time capsules
 - Dream journal with keyword and mood pattern analysis
 - Legacy notes
@@ -15,7 +15,7 @@ It includes:
 
 Default vault passcode: `1234`
 
-Default emergency PIN: `1111`
+Emergency card: quick access without the vault passcode
 
 ## Run Locally
 

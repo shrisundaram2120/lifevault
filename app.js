@@ -1,10 +1,8 @@
 const STORAGE_KEY = "lifevault-data-v1";
 const DEFAULT_PASSCODE = "1234";
-const DEFAULT_PIN = "1111";
 
 const emptyVault = {
   passcode: DEFAULT_PASSCODE,
-  emergencyPin: DEFAULT_PIN,
   emergency: {
     fullName: "",
     bloodGroup: "",
@@ -26,11 +24,9 @@ let activeSection = "dashboard";
 const lockScreen = document.getElementById("lockScreen");
 const vaultScreen = document.getElementById("vaultScreen");
 const unlockForm = document.getElementById("unlockForm");
-const emergencyForm = document.getElementById("emergencyForm");
+const emergencyAccessBtn = document.getElementById("emergencyAccessBtn");
 const authMessage = document.getElementById("authMessage");
-const pinMessage = document.getElementById("pinMessage");
 const passcodeInput = document.getElementById("passcodeInput");
-const emergencyPinInput = document.getElementById("emergencyPinInput");
 const lockBtn = document.getElementById("lockBtn");
 const sectionTitle = document.getElementById("sectionTitle");
 const todayText = document.getElementById("todayText");
@@ -358,7 +354,6 @@ function renderEmergencyModule() {
   document.getElementById("contactNameInput").value = vault.emergency.contactName;
   document.getElementById("contactPhoneInput").value = vault.emergency.contactPhone;
   document.getElementById("routineInput").value = vault.emergency.routine;
-  document.getElementById("pinSetupInput").value = vault.emergencyPin;
   renderEmergencyCard(document.getElementById("emergencyCard"));
 }
 
@@ -400,15 +395,7 @@ unlockForm.addEventListener("submit", (event) => {
   showSection("dashboard");
 });
 
-emergencyForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  if (emergencyPinInput.value !== vault.emergencyPin) {
-    pinMessage.textContent = "Incorrect emergency PIN.";
-    return;
-  }
-
-  emergencyPinInput.value = "";
-  pinMessage.textContent = "";
+emergencyAccessBtn.addEventListener("click", () => {
   renderEmergencyCard(emergencyDialogContent);
   emergencyDialog.showModal();
 });
@@ -435,7 +422,6 @@ document.getElementById("emergencyProfileForm").addEventListener("submit", (even
     contactPhone: document.getElementById("contactPhoneInput").value.trim(),
     routine: document.getElementById("routineInput").value.trim(),
   };
-  vault.emergencyPin = document.getElementById("pinSetupInput").value.trim() || DEFAULT_PIN;
   saveVault();
   render();
 });

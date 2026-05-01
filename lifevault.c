@@ -73,21 +73,47 @@ int main(void) {
     int noteCount = 0;
     int memoryCount = 0;
     int choice = 0;
+    int startChoice = 0;
+    int unlocked = 0;
     char passcode[20];
 
     initializeEmergencyProfile(&profile);
 
-    printf("=====================================\n");
-    printf("              LIFEVAULT\n");
-    printf(" Personal Safety and Memory System\n");
-    printf("=====================================\n");
-    printf("Enter vault passcode: ");
-    readLine(passcode, sizeof(passcode));
+    do {
+        printf("=====================================\n");
+        printf("              LIFEVAULT\n");
+        printf(" Personal Safety and Memory System\n");
+        printf("=====================================\n");
+        printf("1. View Emergency Card\n");
+        printf("2. Unlock Full Vault\n");
+        printf("3. Exit\n");
+        printf("Enter your choice: ");
 
-    if (strcmp(passcode, "1234") != 0) {
-        printf("Access denied.\n");
-        return 0;
-    }
+        if (scanf("%d", &startChoice) != 1) {
+            printf("Invalid input.\n");
+            clearInputBuffer();
+            continue;
+        }
+        clearInputBuffer();
+
+        if (startChoice == 1) {
+            showEmergencyProfile(&profile);
+        } else if (startChoice == 2) {
+            printf("Enter vault passcode: ");
+            readLine(passcode, sizeof(passcode));
+
+            if (strcmp(passcode, "1234") == 0) {
+                unlocked = 1;
+            } else {
+                printf("Access denied.\n");
+            }
+        } else if (startChoice == 3) {
+            printf("LifeVault closed.\n");
+            return 0;
+        } else {
+            printf("Invalid choice.\n");
+        }
+    } while (!unlocked);
 
     do {
         printf("\n-------------- MENU --------------\n");

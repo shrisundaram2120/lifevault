@@ -312,6 +312,34 @@ h3 {
   box-shadow: none;
 }
 
+.timeline-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.1fr);
+  gap: 18px;
+}
+
+.timeline-panel,
+.record-form-panel,
+.insight-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 18px;
+}
+
+.form-note {
+  margin: 0;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.insight-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 0;
+}
+
 .summary-list,
 .record-list,
 .pattern-grid {
@@ -471,6 +499,10 @@ h3 {
   .section-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .timeline-layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 640px) {
@@ -490,7 +522,8 @@ h3 {
   .nav-tabs,
   .section-grid,
   .form-grid,
-  .emergency-card-grid {
+  .emergency-card-grid,
+  .timeline-layout {
     grid-template-columns: 1fr;
   }
 

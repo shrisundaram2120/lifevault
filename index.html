@@ -26,7 +26,7 @@
 
       <section class="auth-panel emergency-auth">
         <h2>Emergency Access</h2>
-        <p class="helper-text">Open only the emergency card. Private vault records stay locked.</p>
+        <p class="helper-text">Open only the emergency card. Private life records stay locked.</p>
         <button id="emergencyAccessBtn" class="secondary" type="button">Open Emergency Card</button>
       </section>
     </section>
@@ -40,11 +40,8 @@
         <nav class="nav-tabs" aria-label="Vault sections">
           <button class="nav-button active" type="button" data-section="dashboard">Overview</button>
           <button class="nav-button" type="button" data-section="emergency">Emergency</button>
-          <button class="nav-button" type="button" data-section="capsules">Time Capsules</button>
-          <button class="nav-button" type="button" data-section="dreams">Dream Patterns</button>
-          <button class="nav-button" type="button" data-section="legacy">Legacy Notes</button>
-          <button class="nav-button" type="button" data-section="memories">Memory Lane</button>
-          <button class="nav-button" type="button" data-section="blackbox">Human Black Box</button>
+          <button class="nav-button" type="button" data-section="recorder">Life Recorder</button>
+          <button class="nav-button" type="button" data-section="insights">Insights</button>
         </nav>
         <button id="lockBtn" class="quiet" type="button">Lock Vault</button>
       </aside>
@@ -52,7 +49,7 @@
       <section class="content">
         <header class="content-header">
           <div>
-            <p class="eyebrow">Personal Safety and Future Memory System</p>
+            <p class="eyebrow">Personal Safety and Life Pattern System</p>
             <h2 id="sectionTitle">Overview</h2>
           </div>
           <div class="status-strip">
@@ -67,23 +64,23 @@
             <strong id="emergencyStatus">Incomplete</strong>
           </article>
           <article class="metric-panel accent-amber">
-            <span>Locked Capsules</span>
+            <span>Locked Future Records</span>
             <strong id="lockedCapsuleCount">0</strong>
           </article>
           <article class="metric-panel accent-green">
-            <span>Dream Keywords</span>
+            <span>Pattern Tags</span>
             <strong id="keywordCount">0</strong>
           </article>
           <article class="metric-panel accent-blue">
-            <span>Total Vault Records</span>
+            <span>Total Life Records</span>
             <strong id="totalRecordCount">0</strong>
           </article>
           <article class="wide-panel">
-            <h3>Priority Snapshot</h3>
+            <h3>Life Signal Snapshot</h3>
             <div id="prioritySnapshot" class="summary-list"></div>
           </article>
           <article class="wide-panel">
-            <h3>Recent Entries</h3>
+            <h3>Recent Life Records</h3>
             <div id="recentEntries" class="summary-list"></div>
           </article>
         </section>
@@ -126,155 +123,95 @@
           </article>
         </section>
 
-        <section id="capsulesSection" class="module hidden">
-          <form id="capsuleForm" class="form-grid compact-form">
-            <label>
-              <span>Title</span>
-              <input id="capsuleTitleInput" type="text" maxlength="80" required>
-            </label>
-            <label>
-              <span>Unlock Date</span>
-              <input id="capsuleDateInput" type="date" required>
-            </label>
-            <label class="span-two">
-              <span>Message</span>
-              <textarea id="capsuleMessageInput" rows="4" required></textarea>
-            </label>
-            <button class="primary" type="submit">Create Capsule</button>
-          </form>
-          <div id="capsuleList" class="record-list"></div>
+        <section id="recorderSection" class="module hidden">
+          <div class="timeline-layout">
+            <form id="recordForm" class="form-grid compact-form record-form-panel">
+              <label>
+                <span>Record Title</span>
+                <input id="recordTitleInput" type="text" maxlength="80" required>
+              </label>
+              <label>
+                <span>Life Record Type</span>
+                <select id="recordTypeInput">
+                  <option value="event">Life Event</option>
+                  <option value="future">Future Message</option>
+                  <option value="dream">Dream Signal</option>
+                  <option value="legacy">Legacy Instruction</option>
+                  <option value="memory">Memory or Goal</option>
+                </select>
+              </label>
+              <label>
+                <span>Mood</span>
+                <select id="recordMoodInput">
+                  <option>Calm</option>
+                  <option>Focused</option>
+                  <option>Happy</option>
+                  <option>Curious</option>
+                  <option>Anxious</option>
+                  <option>Stressed</option>
+                  <option>Angry</option>
+                  <option>Low</option>
+                </select>
+              </label>
+              <label>
+                <span>Tags / Keywords</span>
+                <input id="recordTagsInput" type="text" maxlength="140" placeholder="exam, family, health">
+              </label>
+              <label>
+                <span>Unlock Date</span>
+                <input id="recordUnlockDateInput" type="date">
+              </label>
+              <label>
+                <span>Outcome</span>
+                <select id="recordOutcomeInput">
+                  <option>Good</option>
+                  <option>Neutral</option>
+                  <option>Bad</option>
+                  <option>Pending</option>
+                </select>
+              </label>
+              <label>
+                <span>Stress Level</span>
+                <input id="recordStressInput" type="number" min="1" max="10" value="5" required>
+              </label>
+              <label>
+                <span>Energy Level</span>
+                <input id="recordEnergyInput" type="number" min="1" max="10" value="5" required>
+              </label>
+              <label class="span-two">
+                <span>Decision, Promise, or Main Thought</span>
+                <input id="recordDecisionInput" type="text" maxlength="140">
+              </label>
+              <label class="span-two">
+                <span>Life Record</span>
+                <textarea id="recordBodyInput" rows="5" required></textarea>
+              </label>
+              <p id="recordTypeHint" class="form-note span-two"></p>
+              <button class="primary" type="submit">Save Life Record</button>
+            </form>
+
+            <article class="timeline-panel">
+              <h3>Life Timeline</h3>
+              <div id="recordTimeline" class="record-list"></div>
+            </article>
+          </div>
         </section>
 
-        <section id="dreamsSection" class="module hidden">
-          <form id="dreamForm" class="form-grid compact-form">
-            <label>
-              <span>Dream Title</span>
-              <input id="dreamTitleInput" type="text" maxlength="80" required>
-            </label>
-            <label>
-              <span>Mood</span>
-              <select id="dreamMoodInput">
-                <option>Calm</option>
-                <option>Curious</option>
-                <option>Happy</option>
-                <option>Anxious</option>
-                <option>Confused</option>
-              </select>
-            </label>
-            <label>
-              <span>Keywords</span>
-              <input id="dreamKeywordsInput" type="text" maxlength="120" placeholder="water, exam, travel">
-            </label>
-            <label class="span-two">
-              <span>Dream Notes</span>
-              <textarea id="dreamNotesInput" rows="4" required></textarea>
-            </label>
-            <button class="primary" type="submit">Add Dream</button>
-          </form>
-          <article class="preview-panel">
-            <h3>Pattern Analyzer</h3>
-            <div id="dreamPatterns" class="pattern-grid"></div>
-          </article>
-          <div id="dreamList" class="record-list"></div>
-        </section>
-
-        <section id="legacySection" class="module hidden">
-          <form id="legacyForm" class="form-grid compact-form">
-            <label>
-              <span>Note Title</span>
-              <input id="legacyTitleInput" type="text" maxlength="80" required>
-            </label>
-            <label>
-              <span>Category</span>
-              <select id="legacyCategoryInput">
-                <option>Family Message</option>
-                <option>Important Instruction</option>
-                <option>Asset Note</option>
-                <option>Personal Wish</option>
-              </select>
-            </label>
-            <label class="span-two">
-              <span>Note</span>
-              <textarea id="legacyMessageInput" rows="4" required></textarea>
-            </label>
-            <button class="primary" type="submit">Save Legacy Note</button>
-          </form>
-          <div id="legacyList" class="record-list"></div>
-        </section>
-
-        <section id="memoriesSection" class="module hidden">
-          <form id="memoryForm" class="form-grid compact-form">
-            <label>
-              <span>Memory Title</span>
-              <input id="memoryTitleInput" type="text" maxlength="80" required>
-            </label>
-            <label>
-              <span>Category</span>
-              <select id="memoryCategoryInput">
-                <option>Achievement</option>
-                <option>Lesson</option>
-                <option>Gratitude</option>
-                <option>Goal</option>
-                <option>Promise</option>
-              </select>
-            </label>
-            <label class="span-two">
-              <span>Memory</span>
-              <textarea id="memoryMessageInput" rows="4" required></textarea>
-            </label>
-            <button class="primary" type="submit">Add Memory</button>
-          </form>
-          <div id="memoryList" class="record-list"></div>
-        </section>
-
-        <section id="blackboxSection" class="module hidden">
-          <form id="blackBoxForm" class="form-grid compact-form">
-            <label>
-              <span>Event Title</span>
-              <input id="blackBoxTitleInput" type="text" maxlength="80" required>
-            </label>
-            <label>
-              <span>Mood</span>
-              <select id="blackBoxMoodInput">
-                <option>Calm</option>
-                <option>Focused</option>
-                <option>Happy</option>
-                <option>Stressed</option>
-                <option>Angry</option>
-                <option>Low</option>
-              </select>
-            </label>
-            <label>
-              <span>Stress Level</span>
-              <input id="blackBoxStressInput" type="number" min="1" max="10" value="5" required>
-            </label>
-            <label>
-              <span>Energy Level</span>
-              <input id="blackBoxEnergyInput" type="number" min="1" max="10" value="5" required>
-            </label>
-            <label>
-              <span>Decision Made</span>
-              <input id="blackBoxDecisionInput" type="text" maxlength="120" placeholder="What choice did you make?">
-            </label>
-            <label>
-              <span>Outcome</span>
-              <select id="blackBoxOutcomeInput">
-                <option>Good</option>
-                <option>Neutral</option>
-                <option>Bad</option>
-              </select>
-            </label>
-            <label class="span-two">
-              <span>Incident Notes</span>
-              <textarea id="blackBoxNotesInput" rows="4" required></textarea>
-            </label>
-            <button class="primary" type="submit">Record Event</button>
-          </form>
-          <article class="preview-panel">
-            <h3>Risk Signal Analyzer</h3>
-            <div id="blackBoxSignals" class="pattern-grid"></div>
-          </article>
-          <div id="blackBoxList" class="record-list"></div>
+        <section id="insightsSection" class="module hidden">
+          <div class="section-grid insight-grid">
+            <article class="wide-panel insight-panel">
+              <h3>Signal Analyzer</h3>
+              <div id="insightSignals" class="pattern-grid"></div>
+            </article>
+            <article class="wide-panel insight-panel">
+              <h3>Pattern Map</h3>
+              <div id="patternInsights" class="pattern-grid"></div>
+            </article>
+            <article class="wide-panel insight-panel span-two">
+              <h3>Records Needing Attention</h3>
+              <div id="highRiskList" class="record-list"></div>
+            </article>
+          </div>
         </section>
       </section>
     </section>

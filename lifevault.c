@@ -2,7 +2,7 @@
 #include <string.h>
 #include <time.h>
 
-#define MAX_RECORDS 50
+#define MAX_RECORDS 80
 #define TEXT_SIZE 300
 #define TITLE_SIZE 80
 #define NAME_SIZE 60
@@ -21,74 +21,38 @@ typedef struct {
 
 typedef struct {
     char title[TITLE_SIZE];
+    char type[40];
+    char mood[30];
+    char tags[TEXT_SIZE];
     char unlockDate[DATE_SIZE];
-    char message[TEXT_SIZE];
-    int opened;
-} TimeCapsule;
-
-typedef struct {
-    char title[TITLE_SIZE];
-    char mood[30];
-    char keywords[TEXT_SIZE];
-    char notes[TEXT_SIZE];
-} DreamEntry;
-
-typedef struct {
-    char title[TITLE_SIZE];
-    char category[50];
-    char message[TEXT_SIZE];
-} LegacyNote;
-
-typedef struct {
-    char title[TITLE_SIZE];
-    char category[50];
-    char message[TEXT_SIZE];
-} MemoryEntry;
-
-typedef struct {
-    char title[TITLE_SIZE];
-    char mood[30];
+    char outcome[30];
     int stressLevel;
     int energyLevel;
     char decision[TEXT_SIZE];
-    char outcome[30];
-    char notes[TEXT_SIZE];
-} BlackBoxEvent;
+    char body[TEXT_SIZE];
+} LifeRecord;
 
 void clearInputBuffer(void);
 void readLine(char text[], int size);
 void initializeEmergencyProfile(EmergencyProfile *profile);
-void saveTextRecord(const char type[], const char title[], const char detail[]);
 void createEmergencyProfile(EmergencyProfile *profile);
 void showEmergencyProfile(const EmergencyProfile *profile);
-void addTimeCapsule(TimeCapsule capsules[], int *capsuleCount);
-void viewTimeCapsules(TimeCapsule capsules[], int capsuleCount);
-void addDreamEntry(DreamEntry dreams[], int *dreamCount);
-void analyzeDreamPatterns(const DreamEntry dreams[], int dreamCount);
-void addLegacyNote(LegacyNote notes[], int *noteCount);
-void addMemoryEntry(MemoryEntry memories[], int *memoryCount);
-void addBlackBoxEvent(BlackBoxEvent events[], int *eventCount);
-void analyzeBlackBoxEvents(const BlackBoxEvent events[], int eventCount);
-void displaySimpleReport(const LegacyNote notes[], int noteCount,
-                         const MemoryEntry memories[], int memoryCount);
-int calculateBlackBoxRisk(const BlackBoxEvent *event);
+void addLifeRecord(LifeRecord records[], int *recordCount);
+void viewLifeTimeline(LifeRecord records[], int recordCount);
+void analyzeLifeSignals(const LifeRecord records[], int recordCount);
+void displayVaultReport(const LifeRecord records[], int recordCount);
+void saveRecordToFile(const LifeRecord *record);
+int calculateRecordRisk(const LifeRecord *record);
+int isRecordLocked(const LifeRecord *record);
 int dateToNumber(const char date[]);
 int todayToNumber(void);
 
 int main(void) {
     EmergencyProfile profile;
-    TimeCapsule capsules[MAX_RECORDS];
-    DreamEntry dreams[MAX_RECORDS];
-    LegacyNote legacyNotes[MAX_RECORDS];
-    MemoryEntry memories[MAX_RECORDS];
-    BlackBoxEvent blackBoxEvents[MAX_RECORDS];
-    int capsuleCount = 0;
-    int dreamCount = 0;
-    int noteCount = 0;
-    int memoryCount = 0;
-    int blackBoxCount = 0;
-    int choice = 0;
+    LifeRecord records[MAX_RECORDS];
+    int recordCount = 0;
     int startChoice = 0;
+    int choice = 0;
     int unlocked = 0;
     char passcode[20];
 
@@ -97,7 +61,7 @@ int main(void) {
     do {
         printf("=====================================\n");
         printf("              LIFEVAULT\n");
-        printf(" Personal Safety and Memory System\n");
+        printf(" Personal Life Record System\n");
         printf("=====================================\n");
         printf("1. View Emergency Card\n");
         printf("2. Unlock Full Vault\n");
@@ -131,19 +95,14 @@ int main(void) {
     } while (!unlocked);
 
     do {
-        printf("\n-------------- MENU --------------\n");
-        printf("1. Create Emergency Profile\n");
-        printf("2. Show Emergency Profile\n");
-        printf("3. Create Time Capsule\n");
-        printf("4. View Time Capsules\n");
-        printf("5. Add Dream Entry\n");
-        printf("6. Analyze Dream Patterns\n");
-        printf("7. Add Legacy Note\n");
-        printf("8. Add Memory Lane Entry\n");
-        printf("9. Add Human Black Box Event\n");
-        printf("10. Analyze Human Black Box\n");
-        printf("11. Display Vault Report\n");
-        printf("12. Exit\n");
+        printf("\n-------------- LIFEVAULT --------------\n");
+        printf("1. Update Emergency Profile\n");
+        printf("2. Show Emergency Card\n");
+        printf("3. Add Life Record\n");
+        printf("4. View Life Timeline\n");
+        printf("5. Analyze Life Signals\n");
+        printf("6. Display Vault Report\n");
+        printf("7. Exit\n");
         printf("Enter your choice: ");
 
         if (scanf("%d", &choice) != 1) {
@@ -161,42 +120,24 @@ int main(void) {
                 showEmergencyProfile(&profile);
                 break;
             case 3:
-                addTimeCapsule(capsules, &capsuleCount);
+                addLifeRecord(records, &recordCount);
                 break;
             case 4:
-                viewTimeCapsules(capsules, capsuleCount);
+                viewLifeTimeline(records, recordCount);
                 break;
             case 5:
-                addDreamEntry(dreams, &dreamCount);
+                analyzeLifeSignals(records, recordCount);
                 break;
             case 6:
-                analyzeDreamPatterns(dreams, dreamCount);
+                displayVaultReport(records, recordCount);
                 break;
             case 7:
-                addLegacyNote(legacyNotes, &noteCount);
-                break;
-            case 8:
-                addMemoryEntry(memories, &memoryCount);
-                break;
-            case 9:
-                addBlackBoxEvent(blackBoxEvents, &blackBoxCount);
-                break;
-            case 10:
-                analyzeBlackBoxEvents(blackBoxEvents, blackBoxCount);
-                break;
-            case 11:
-                displaySimpleReport(legacyNotes, noteCount, memories, memoryCount);
-                printf("Time capsules: %d\n", capsuleCount);
-                printf("Dream entries: %d\n", dreamCount);
-                printf("Human Black Box events: %d\n", blackBoxCount);
-                break;
-            case 12:
                 printf("LifeVault locked. Records saved to %s.\n", FILE_NAME);
                 break;
             default:
                 printf("Invalid choice.\n");
         }
-    } while (choice != 12);
+    } while (choice != 7);
 
     return 0;
 }
@@ -222,21 +163,7 @@ void initializeEmergencyProfile(EmergencyProfile *profile) {
     strcpy(profile->routine, "Not added");
 }
 
-void saveTextRecord(const char type[], const char title[], const char detail[]) {
-    FILE *file = fopen(FILE_NAME, "a");
-
-    if (file == NULL) {
-        printf("Warning: Could not save record to file.\n");
-        return;
-    }
-
-    fprintf(file, "[%s]\nTitle: %s\nDetails: %s\n\n", type, title, detail);
-    fclose(file);
-}
-
 void createEmergencyProfile(EmergencyProfile *profile) {
-    char fileDetail[TEXT_SIZE * 2];
-
     printf("\nFull name: ");
     readLine(profile->fullName, NAME_SIZE);
     printf("Blood group: ");
@@ -251,10 +178,6 @@ void createEmergencyProfile(EmergencyProfile *profile) {
     readLine(profile->contactPhone, sizeof(profile->contactPhone));
     printf("Daily routine: ");
     readLine(profile->routine, TEXT_SIZE);
-
-    snprintf(fileDetail, sizeof(fileDetail), "Name: %s, Contact: %s, Blood Group: %s",
-             profile->fullName, profile->contactPhone, profile->bloodGroup);
-    saveTextRecord("Emergency Profile", profile->fullName, fileDetail);
     printf("Emergency profile saved.\n");
 }
 
@@ -269,253 +192,198 @@ void showEmergencyProfile(const EmergencyProfile *profile) {
     printf("Daily Routine: %s\n", profile->routine);
 }
 
-void addTimeCapsule(TimeCapsule capsules[], int *capsuleCount) {
-    TimeCapsule *capsule;
+void addLifeRecord(LifeRecord records[], int *recordCount) {
+    LifeRecord *record;
 
-    if (*capsuleCount >= MAX_RECORDS) {
-        printf("Capsule storage is full.\n");
+    if (*recordCount >= MAX_RECORDS) {
+        printf("Life record storage is full.\n");
         return;
     }
 
-    capsule = &capsules[*capsuleCount];
-    printf("\nCapsule title: ");
-    readLine(capsule->title, TITLE_SIZE);
-    printf("Unlock date (YYYY-MM-DD): ");
-    readLine(capsule->unlockDate, DATE_SIZE);
-    printf("Message: ");
-    readLine(capsule->message, TEXT_SIZE);
-    capsule->opened = 0;
+    record = &records[*recordCount];
 
-    (*capsuleCount)++;
-    saveTextRecord("Time Capsule", capsule->title, capsule->message);
-    printf("Time capsule created.\n");
+    printf("\nRecord title: ");
+    readLine(record->title, TITLE_SIZE);
+    printf("Record type (Life Event/Future Message/Dream Signal/Legacy Instruction/Memory): ");
+    readLine(record->type, sizeof(record->type));
+    printf("Mood: ");
+    readLine(record->mood, sizeof(record->mood));
+    printf("Tags or keywords: ");
+    readLine(record->tags, TEXT_SIZE);
+    printf("Unlock date if future record (YYYY-MM-DD or blank): ");
+    readLine(record->unlockDate, DATE_SIZE);
+    printf("Outcome (Good/Neutral/Bad/Pending): ");
+    readLine(record->outcome, sizeof(record->outcome));
+    printf("Stress level (1-10): ");
+    scanf("%d", &record->stressLevel);
+    clearInputBuffer();
+    printf("Energy level (1-10): ");
+    scanf("%d", &record->energyLevel);
+    clearInputBuffer();
+    printf("Decision, promise, or main thought: ");
+    readLine(record->decision, TEXT_SIZE);
+    printf("Life record body: ");
+    readLine(record->body, TEXT_SIZE);
+
+    if (record->stressLevel < 1) {
+        record->stressLevel = 1;
+    } else if (record->stressLevel > 10) {
+        record->stressLevel = 10;
+    }
+
+    if (record->energyLevel < 1) {
+        record->energyLevel = 1;
+    } else if (record->energyLevel > 10) {
+        record->energyLevel = 10;
+    }
+
+    (*recordCount)++;
+    saveRecordToFile(record);
+    printf("Life record saved.\n");
 }
 
-void viewTimeCapsules(TimeCapsule capsules[], int capsuleCount) {
+void viewLifeTimeline(LifeRecord records[], int recordCount) {
     int i;
-    int today = todayToNumber();
 
-    if (capsuleCount == 0) {
-        printf("No time capsules saved.\n");
+    if (recordCount == 0) {
+        printf("No life records saved.\n");
         return;
     }
 
-    printf("\n---------- Time Capsules ----------\n");
-    for (i = 0; i < capsuleCount; i++) {
-        printf("\n%d. %s\n", i + 1, capsules[i].title);
-        printf("Unlock Date: %s\n", capsules[i].unlockDate);
+    printf("\n---------- Life Timeline ----------\n");
+    for (i = 0; i < recordCount; i++) {
+        printf("\n%d. %s [%s]\n", i + 1, records[i].title, records[i].type);
+        printf("Mood: %s | Stress: %d/10 | Energy: %d/10\n",
+               records[i].mood, records[i].stressLevel, records[i].energyLevel);
+        printf("Outcome: %s | Risk Score: %d/100\n",
+               records[i].outcome, calculateRecordRisk(&records[i]));
+        printf("Tags: %s\n", records[i].tags);
 
-        if (today >= dateToNumber(capsules[i].unlockDate)) {
-            capsules[i].opened = 1;
-            printf("Message: %s\n", capsules[i].message);
+        if (isRecordLocked(&records[i])) {
+            printf("Body: Locked until %s\n", records[i].unlockDate);
         } else {
-            printf("Status: Locked until unlock date.\n");
+            printf("Decision: %s\n", records[i].decision);
+            printf("Body: %s\n", records[i].body);
         }
     }
 }
 
-void addDreamEntry(DreamEntry dreams[], int *dreamCount) {
-    DreamEntry *dream;
-
-    if (*dreamCount >= MAX_RECORDS) {
-        printf("Dream journal is full.\n");
-        return;
-    }
-
-    dream = &dreams[*dreamCount];
-    printf("\nDream title: ");
-    readLine(dream->title, TITLE_SIZE);
-    printf("Mood: ");
-    readLine(dream->mood, sizeof(dream->mood));
-    printf("Keywords separated by commas: ");
-    readLine(dream->keywords, TEXT_SIZE);
-    printf("Dream notes: ");
-    readLine(dream->notes, TEXT_SIZE);
-
-    (*dreamCount)++;
-    saveTextRecord("Dream Entry", dream->title, dream->keywords);
-    printf("Dream entry saved.\n");
-}
-
-void analyzeDreamPatterns(const DreamEntry dreams[], int dreamCount) {
-    int i;
-
-    if (dreamCount == 0) {
-        printf("No dream entries to analyze.\n");
-        return;
-    }
-
-    printf("\n---------- Dream Pattern Report ----------\n");
-    for (i = 0; i < dreamCount; i++) {
-        printf("%d. %s | Mood: %s | Keywords: %s\n",
-               i + 1, dreams[i].title, dreams[i].mood, dreams[i].keywords);
-    }
-    printf("Repeated keywords across entries may show recurring thoughts or themes.\n");
-}
-
-void addLegacyNote(LegacyNote notes[], int *noteCount) {
-    LegacyNote *note;
-
-    if (*noteCount >= MAX_RECORDS) {
-        printf("Legacy note storage is full.\n");
-        return;
-    }
-
-    note = &notes[*noteCount];
-    printf("\nLegacy note title: ");
-    readLine(note->title, TITLE_SIZE);
-    printf("Category: ");
-    readLine(note->category, sizeof(note->category));
-    printf("Message: ");
-    readLine(note->message, TEXT_SIZE);
-
-    (*noteCount)++;
-    saveTextRecord("Legacy Note", note->title, note->message);
-    printf("Legacy note saved.\n");
-}
-
-void addMemoryEntry(MemoryEntry memories[], int *memoryCount) {
-    MemoryEntry *memory;
-
-    if (*memoryCount >= MAX_RECORDS) {
-        printf("Memory Lane storage is full.\n");
-        return;
-    }
-
-    memory = &memories[*memoryCount];
-    printf("\nMemory title: ");
-    readLine(memory->title, TITLE_SIZE);
-    printf("Category: ");
-    readLine(memory->category, sizeof(memory->category));
-    printf("Memory: ");
-    readLine(memory->message, TEXT_SIZE);
-
-    (*memoryCount)++;
-    saveTextRecord("Memory Lane", memory->title, memory->message);
-    printf("Memory saved.\n");
-}
-
-void addBlackBoxEvent(BlackBoxEvent events[], int *eventCount) {
-    BlackBoxEvent *event;
-    char fileDetail[TEXT_SIZE * 2];
-
-    if (*eventCount >= MAX_RECORDS) {
-        printf("Human Black Box storage is full.\n");
-        return;
-    }
-
-    event = &events[*eventCount];
-    printf("\nEvent title: ");
-    readLine(event->title, TITLE_SIZE);
-    printf("Mood: ");
-    readLine(event->mood, sizeof(event->mood));
-    printf("Stress level (1-10): ");
-    scanf("%d", &event->stressLevel);
-    clearInputBuffer();
-    printf("Energy level (1-10): ");
-    scanf("%d", &event->energyLevel);
-    clearInputBuffer();
-    printf("Decision made: ");
-    readLine(event->decision, TEXT_SIZE);
-    printf("Outcome (Good/Neutral/Bad): ");
-    readLine(event->outcome, sizeof(event->outcome));
-    printf("Incident notes: ");
-    readLine(event->notes, TEXT_SIZE);
-
-    if (event->stressLevel < 1) {
-        event->stressLevel = 1;
-    } else if (event->stressLevel > 10) {
-        event->stressLevel = 10;
-    }
-
-    if (event->energyLevel < 1) {
-        event->energyLevel = 1;
-    } else if (event->energyLevel > 10) {
-        event->energyLevel = 10;
-    }
-
-    snprintf(fileDetail, sizeof(fileDetail), "Mood: %s, Stress: %d, Energy: %d, Outcome: %s",
-             event->mood, event->stressLevel, event->energyLevel, event->outcome);
-    (*eventCount)++;
-    saveTextRecord("Human Black Box", event->title, fileDetail);
-    printf("Human Black Box event saved.\n");
-}
-
-void analyzeBlackBoxEvents(const BlackBoxEvent events[], int eventCount) {
+void analyzeLifeSignals(const LifeRecord records[], int recordCount) {
     int i;
     int riskScore;
     int highRiskCount = 0;
+    int lockedCount = 0;
+    int badOutcomeCount = 0;
     int totalStress = 0;
     int totalEnergy = 0;
-    int badOutcomeCount = 0;
 
-    if (eventCount == 0) {
-        printf("No Human Black Box events to analyze.\n");
+    if (recordCount == 0) {
+        printf("No life records to analyze.\n");
         return;
     }
 
-    printf("\n---------- Human Black Box Risk Signals ----------\n");
-
-    for (i = 0; i < eventCount; i++) {
-        riskScore = calculateBlackBoxRisk(&events[i]);
-        totalStress += events[i].stressLevel;
-        totalEnergy += events[i].energyLevel;
+    printf("\n---------- Life Signal Analyzer ----------\n");
+    for (i = 0; i < recordCount; i++) {
+        riskScore = calculateRecordRisk(&records[i]);
+        totalStress += records[i].stressLevel;
+        totalEnergy += records[i].energyLevel;
 
         if (riskScore >= 70) {
             highRiskCount++;
+            printf("Attention: %s has high risk score %d/100.\n", records[i].title, riskScore);
         }
 
-        if (strcmp(events[i].outcome, "Bad") == 0 || strcmp(events[i].outcome, "bad") == 0) {
+        if (isRecordLocked(&records[i])) {
+            lockedCount++;
+        }
+
+        if (strcmp(records[i].outcome, "Bad") == 0 || strcmp(records[i].outcome, "bad") == 0) {
             badOutcomeCount++;
         }
-
-        printf("%d. %s | Risk Score: %d/100 | Mood: %s | Outcome: %s\n",
-               i + 1, events[i].title, riskScore, events[i].mood, events[i].outcome);
     }
 
-    printf("\nAverage stress: %d/10\n", totalStress / eventCount);
-    printf("Average energy: %d/10\n", totalEnergy / eventCount);
-    printf("High-risk events: %d\n", highRiskCount);
+    printf("\nAverage stress: %d/10\n", totalStress / recordCount);
+    printf("Average energy: %d/10\n", totalEnergy / recordCount);
+    printf("High-risk life records: %d\n", highRiskCount);
     printf("Bad outcomes: %d\n", badOutcomeCount);
+    printf("Locked future records: %d\n", lockedCount);
 
-    if (highRiskCount > 0) {
-        printf("Risk signal: Repeated stress, low energy, or bad outcomes need attention.\n");
+    if (highRiskCount > 0 || badOutcomeCount > 1) {
+        printf("Main signal: repeated stress, low energy, or bad outcomes need attention.\n");
     } else {
-        printf("No strong risk signal detected from current records.\n");
+        printf("Main signal: no strong risk pattern detected yet.\n");
     }
 }
 
-void displaySimpleReport(const LegacyNote notes[], int noteCount,
-                         const MemoryEntry memories[], int memoryCount) {
+void displayVaultReport(const LifeRecord records[], int recordCount) {
     int i;
+    int futureCount = 0;
+    int dreamCount = 0;
+    int legacyCount = 0;
+    int memoryCount = 0;
+    int eventCount = 0;
+
+    for (i = 0; i < recordCount; i++) {
+        if (strstr(records[i].type, "Future") != NULL) {
+            futureCount++;
+        } else if (strstr(records[i].type, "Dream") != NULL) {
+            dreamCount++;
+        } else if (strstr(records[i].type, "Legacy") != NULL) {
+            legacyCount++;
+        } else if (strstr(records[i].type, "Memory") != NULL) {
+            memoryCount++;
+        } else {
+            eventCount++;
+        }
+    }
 
     printf("\n---------- Vault Report ----------\n");
-    printf("Legacy notes: %d\n", noteCount);
-    for (i = 0; i < noteCount; i++) {
-        printf("- %s (%s)\n", notes[i].title, notes[i].category);
-    }
-
-    printf("Memory entries: %d\n", memoryCount);
-    for (i = 0; i < memoryCount; i++) {
-        printf("- %s (%s)\n", memories[i].title, memories[i].category);
-    }
+    printf("Total life records: %d\n", recordCount);
+    printf("Life events: %d\n", eventCount);
+    printf("Future messages: %d\n", futureCount);
+    printf("Dream signals: %d\n", dreamCount);
+    printf("Legacy instructions: %d\n", legacyCount);
+    printf("Memories or goals: %d\n", memoryCount);
 }
 
-int calculateBlackBoxRisk(const BlackBoxEvent *event) {
+void saveRecordToFile(const LifeRecord *record) {
+    FILE *file = fopen(FILE_NAME, "a");
+
+    if (file == NULL) {
+        printf("Warning: Could not save record to file.\n");
+        return;
+    }
+
+    fprintf(file, "[Life Record]\n");
+    fprintf(file, "Title: %s\n", record->title);
+    fprintf(file, "Type: %s\n", record->type);
+    fprintf(file, "Mood: %s\n", record->mood);
+    fprintf(file, "Stress: %d\n", record->stressLevel);
+    fprintf(file, "Energy: %d\n", record->energyLevel);
+    fprintf(file, "Outcome: %s\n", record->outcome);
+    fprintf(file, "Tags: %s\n", record->tags);
+    fprintf(file, "Decision: %s\n", record->decision);
+    fprintf(file, "Body: %s\n\n", record->body);
+    fclose(file);
+}
+
+int calculateRecordRisk(const LifeRecord *record) {
     int score = 0;
 
-    score += event->stressLevel * 7;
-    score += (10 - event->energyLevel) * 4;
+    score += record->stressLevel * 7;
+    score += (10 - record->energyLevel) * 4;
 
-    if (strcmp(event->outcome, "Bad") == 0 || strcmp(event->outcome, "bad") == 0) {
+    if (strcmp(record->outcome, "Bad") == 0 || strcmp(record->outcome, "bad") == 0) {
         score += 20;
-    } else if (strcmp(event->outcome, "Neutral") == 0 || strcmp(event->outcome, "neutral") == 0) {
+    } else if (strcmp(record->outcome, "Neutral") == 0 || strcmp(record->outcome, "neutral") == 0 ||
+               strcmp(record->outcome, "Pending") == 0 || strcmp(record->outcome, "pending") == 0) {
         score += 8;
     }
 
-    if (strcmp(event->mood, "Stressed") == 0 || strcmp(event->mood, "Angry") == 0 ||
-        strcmp(event->mood, "Low") == 0 || strcmp(event->mood, "stressed") == 0 ||
-        strcmp(event->mood, "angry") == 0 || strcmp(event->mood, "low") == 0) {
+    if (strcmp(record->mood, "Anxious") == 0 || strcmp(record->mood, "Stressed") == 0 ||
+        strcmp(record->mood, "Angry") == 0 || strcmp(record->mood, "Low") == 0 ||
+        strcmp(record->mood, "anxious") == 0 || strcmp(record->mood, "stressed") == 0 ||
+        strcmp(record->mood, "angry") == 0 || strcmp(record->mood, "low") == 0) {
         score += 12;
     }
 
@@ -524,6 +392,14 @@ int calculateBlackBoxRisk(const BlackBoxEvent *event) {
     }
 
     return score;
+}
+
+int isRecordLocked(const LifeRecord *record) {
+    if (strlen(record->unlockDate) == 0) {
+        return 0;
+    }
+
+    return todayToNumber() < dateToNumber(record->unlockDate);
 }
 
 int dateToNumber(const char date[]) {

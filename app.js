@@ -1,5 +1,22 @@
-const STORAGE_KEY = "lifevault-data-v1";
+const STORAGE_KEY = "lifevault-data-v2";
+const LEGACY_STORAGE_KEY = "lifevault-data-v1";
 const DEFAULT_PASSCODE = "1234";
+
+const recordTypeLabels = {
+  event: "Life Event",
+  future: "Future Message",
+  dream: "Dream Signal",
+  legacy: "Legacy Instruction",
+  memory: "Memory or Goal",
+};
+
+const recordTypeHints = {
+  event: "Use this for decisions, mistakes, warnings, health notes, or important incidents.",
+  future: "Use this as a time capsule. Add an unlock date to keep the message hidden until then.",
+  dream: "Use this for dreams, symbols, moods, and repeated subconscious patterns.",
+  legacy: "Use this for important instructions, wishes, asset notes, or messages for trusted people.",
+  memory: "Use this for achievements, promises, lessons, gratitude, and goals.",
+};
 
 const emptyVault = {
   passcode: DEFAULT_PASSCODE,
@@ -12,11 +29,7 @@ const emptyVault = {
     contactPhone: "",
     routine: "",
   },
-  capsules: [],
-  dreams: [],
-  legacyNotes: [],
-  memories: [],
-  blackBoxEvents: [],
+  records: [],
 };
 
 let vault = loadVault();
@@ -35,39 +48,138 @@ const recordCountText = document.getElementById("recordCountText");
 const emergencyDialog = document.getElementById("emergencyDialog");
 const emergencyDialogContent = document.getElementById("emergencyDialogContent");
 const closeEmergencyDialog = document.getElementById("closeEmergencyDialog");
+const recordTypeInput = document.getElementById("recordTypeInput");
+const recordTypeHint = document.getElementById("recordTypeHint");
 
 const sections = {
   dashboard: document.getElementById("dashboardSection"),
   emergency: document.getElementById("emergencySection"),
-  capsules: document.getElementById("capsulesSection"),
-  dreams: document.getElementById("dreamsSection"),
-  legacy: document.getElementById("legacySection"),
-  memories: document.getElementById("memoriesSection"),
-  blackbox: document.getElementById("blackboxSection"),
+  recorder: document.getElementById("recorderSection"),
+  insights: document.getElementById("insightsSection"),
 };
 
 const sectionNames = {
   dashboard: "Overview",
   emergency: "Emergency",
-  capsules: "Time Capsules",
-  dreams: "Dream Patterns",
-  legacy: "Legacy Notes",
-  memories: "Memory Lane",
-  blackbox: "Human Black Box",
+  recorder: "Life Recorder",
+  insights: "Insights",
 };
 
 function loadVault() {
-  const saved = localStorage.getItem(STORAGE_KEY);
+  const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
 
   if (!saved) {
     return structuredClone(emptyVault);
   }
 
   try {
-    return { ...structuredClone(emptyVault), ...JSON.parse(saved) };
+    return normalizeVault(JSON.parse(saved));
   } catch {
     return structuredClone(emptyVault);
   }
+}
+
+function normalizeVault(saved) {
+  const normalized = structuredClone(emptyVault);
+  normalized.passcode = saved.passcode || DEFAULT_PASSCODE;
+  normalized.emergency = { ...normalized.emergency, ...(saved.emergency || {}) };
+
+  if (Array.isArray(saved.records)) {
+    normalized.records = saved.records.map(normalizeRecord);
+    return normalized;
+  }
+
+  normalized.records = [
+    ...(saved.capsules || []).map((item) => ({
+      id: item.id || crypto.randomUUID(),
+      type: "future",
+      title: item.title,
+      mood: "Calm",
+      tags: "future, message",
+      unlockDate: item.unlockDate,
+      outcome: "Pending",
+      stress: 5,
+      energy: 5,
+      decision: "",
+      body: item.message,
+      createdAt: item.createdAt || todayIso(),
+    })),
+    ...(saved.dreams || []).map((item) => ({
+      id: item.id || crypto.randomUUID(),
+      type: "dream",
+      title: item.title,
+      mood: item.mood,
+      tags: item.keywords,
+      unlockDate: "",
+      outcome: "Neutral",
+      stress: 5,
+      energy: 5,
+      decision: "",
+      body: item.notes,
+      createdAt: item.createdAt || todayIso(),
+    })),
+    ...(saved.legacyNotes || []).map((item) => ({
+      id: item.id || crypto.randomUUID(),
+      type: "legacy",
+      title: item.title,
+      mood: "Calm",
+      tags: item.category,
+      unlockDate: "",
+      outcome: "Pending",
+      stress: 5,
+      energy: 5,
+      decision: item.category,
+      body: item.message,
+      createdAt: item.createdAt || todayIso(),
+    })),
+    ...(saved.memories || []).map((item) => ({
+      id: item.id || crypto.randomUUID(),
+      type: "memory",
+      title: item.title,
+      mood: "Happy",
+      tags: item.category,
+      unlockDate: "",
+      outcome: "Good",
+      stress: 3,
+      energy: 7,
+      decision: item.category,
+      body: item.message,
+      createdAt: item.createdAt || todayIso(),
+    })),
+    ...(saved.blackBoxEvents || []).map((item) => ({
+      id: item.id || crypto.randomUUID(),
+      type: "event",
+      title: item.title,
+      mood: item.mood,
+      tags: "black box, life event",
+      unlockDate: "",
+      outcome: item.outcome,
+      stress: item.stress,
+      energy: item.energy,
+      decision: item.decision,
+      body: item.notes,
+      createdAt: item.createdAt || todayIso(),
+    })),
+  ];
+
+  return normalized;
+}
+
+function normalizeRecord(record) {
+  return {
+    id: record.id || crypto.randomUUID(),
+    type: record.type || "event",
+    title: record.title || "Untitled Record",
+    mood: record.mood || "Calm",
+    tags: record.tags || "",
+    unlockDate: record.unlockDate || "",
+    outcome: record.outcome || "Pending",
+    stress: record.stress || 5,
+    energy: record.energy || 5,
+    decision: record.decision || "",
+    body: record.body || record.message || record.notes || "",
+    createdAt: record.createdAt || todayIso(),
+  };
 }
 
 function saveVault() {
@@ -91,6 +203,10 @@ function formatDate(dateValue) {
 }
 
 function daysUntil(dateValue) {
+  if (!dateValue) {
+    return 0;
+  }
+
   const today = new Date(`${todayIso()}T00:00:00`);
   const target = new Date(`${dateValue}T00:00:00`);
   return Math.ceil((target - today) / 86400000);
@@ -105,8 +221,8 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-function addRecord(collectionName, record) {
-  vault[collectionName].unshift({
+function addLifeRecord(record) {
+  vault.records.unshift({
     id: crypto.randomUUID(),
     createdAt: todayIso(),
     ...record,
@@ -115,29 +231,26 @@ function addRecord(collectionName, record) {
   render();
 }
 
-function getTotalRecords() {
-  return (
-    vault.capsules.length +
-    vault.dreams.length +
-    vault.legacyNotes.length +
-    vault.memories.length +
-    vault.blackBoxEvents.length
-  );
-}
-
 function isEmergencyComplete() {
   return Boolean(vault.emergency.fullName && vault.emergency.contactPhone);
 }
 
-function getKeywordStats() {
+function isLocked(record) {
+  return Boolean(record.unlockDate && daysUntil(record.unlockDate) > 0);
+}
+
+function getTags(record) {
+  return String(record.tags || "")
+    .split(",")
+    .map((tag) => tag.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function getTagStats() {
   const counts = new Map();
 
-  vault.dreams.forEach((dream) => {
-    dream.keywords
-      .split(",")
-      .map((keyword) => keyword.trim().toLowerCase())
-      .filter(Boolean)
-      .forEach((keyword) => counts.set(keyword, (counts.get(keyword) || 0) + 1));
+  vault.records.forEach((record) => {
+    getTags(record).forEach((tag) => counts.set(tag, (counts.get(tag) || 0) + 1));
   });
 
   return [...counts.entries()].sort((a, b) => b[1] - a[1]);
@@ -146,43 +259,33 @@ function getKeywordStats() {
 function getMoodStats() {
   const counts = new Map();
 
-  vault.dreams.forEach((dream) => {
-    counts.set(dream.mood, (counts.get(dream.mood) || 0) + 1);
+  vault.records.forEach((record) => {
+    counts.set(record.mood, (counts.get(record.mood) || 0) + 1);
   });
 
   return [...counts.entries()].sort((a, b) => b[1] - a[1]);
 }
 
-function getBlackBoxRiskStats() {
-  const events = vault.blackBoxEvents;
-  const highRiskEvents = events.filter((event) => calculateBlackBoxRisk(event) >= 70);
-  const averageStress = events.length
-    ? Math.round(events.reduce((total, event) => total + Number(event.stress), 0) / events.length)
-    : 0;
-  const averageEnergy = events.length
-    ? Math.round(events.reduce((total, event) => total + Number(event.energy), 0) / events.length)
-    : 0;
-  const badOutcomes = events.filter((event) => event.outcome === "Bad").length;
-
-  return { highRiskEvents, averageStress, averageEnergy, badOutcomes };
-}
-
-function calculateBlackBoxRisk(event) {
+function calculateRisk(record) {
   let score = 0;
-  const stress = Number(event.stress);
-  const energy = Number(event.energy);
+  const stress = Number(record.stress || 5);
+  const energy = Number(record.energy || 5);
 
   score += stress * 7;
   score += (10 - energy) * 4;
 
-  if (event.outcome === "Bad") {
+  if (record.outcome === "Bad") {
     score += 20;
-  } else if (event.outcome === "Neutral") {
+  } else if (record.outcome === "Neutral" || record.outcome === "Pending") {
     score += 8;
   }
 
-  if (["Stressed", "Angry", "Low"].includes(event.mood)) {
+  if (["Anxious", "Stressed", "Angry", "Low"].includes(record.mood)) {
     score += 12;
+  }
+
+  if (record.type === "dream" && ["Anxious", "Confused", "Low"].includes(record.mood)) {
+    score += 6;
   }
 
   return Math.min(100, score);
@@ -202,6 +305,21 @@ function getRiskLabel(score) {
   }
 
   return "Low";
+}
+
+function getSignalStats() {
+  const records = vault.records;
+  const highRiskRecords = records.filter((record) => calculateRisk(record) >= 70);
+  const lockedRecords = records.filter(isLocked);
+  const averageStress = records.length
+    ? Math.round(records.reduce((total, record) => total + Number(record.stress || 5), 0) / records.length)
+    : 0;
+  const averageEnergy = records.length
+    ? Math.round(records.reduce((total, record) => total + Number(record.energy || 5), 0) / records.length)
+    : 0;
+  const badOutcomes = records.filter((record) => record.outcome === "Bad").length;
+
+  return { highRiskRecords, lockedRecords, averageStress, averageEnergy, badOutcomes };
 }
 
 function renderEmergencyCard(target) {
@@ -232,67 +350,58 @@ function renderEmergencyCard(target) {
 }
 
 function renderDashboard() {
-  const lockedCapsules = vault.capsules.filter((capsule) => daysUntil(capsule.unlockDate) > 0).length;
-  const keywordStats = getKeywordStats();
-  const blackBoxStats = getBlackBoxRiskStats();
+  const tagStats = getTagStats();
+  const signalStats = getSignalStats();
 
   document.getElementById("emergencyStatus").textContent = isEmergencyComplete() ? "Ready" : "Incomplete";
-  document.getElementById("lockedCapsuleCount").textContent = lockedCapsules;
-  document.getElementById("keywordCount").textContent = keywordStats.length;
-  document.getElementById("totalRecordCount").textContent = getTotalRecords();
+  document.getElementById("lockedCapsuleCount").textContent = signalStats.lockedRecords.length;
+  document.getElementById("keywordCount").textContent = tagStats.length;
+  document.getElementById("totalRecordCount").textContent = vault.records.length;
 
-  const prioritySnapshot = document.getElementById("prioritySnapshot");
   const snapshotItems = [
     {
       title: "Emergency Access",
-      detail: isEmergencyComplete() ? "Profile and contact are available." : "Add name and contact number.",
+      detail: isEmergencyComplete() ? "Emergency card is ready without unlocking the vault." : "Add name and contact number.",
     },
     {
-      title: "Next Capsule",
-      detail: getNextCapsuleText(),
+      title: "Next Locked Record",
+      detail: getNextLockedRecordText(),
     },
     {
-      title: "Top Dream Pattern",
-      detail: keywordStats[0] ? `${keywordStats[0][0]} appeared ${keywordStats[0][1]} time(s).` : "No dream keywords yet.",
+      title: "Strongest Pattern",
+      detail: tagStats[0] ? `${tagStats[0][0]} appeared ${tagStats[0][1]} time(s).` : "No tags recorded yet.",
     },
     {
-      title: "Human Black Box",
-      detail: blackBoxStats.highRiskEvents.length
-        ? `${blackBoxStats.highRiskEvents.length} high-risk signal(s) detected.`
-        : "No high-risk personal patterns detected.",
+      title: "Risk Signals",
+      detail: signalStats.highRiskRecords.length
+        ? `${signalStats.highRiskRecords.length} high-risk life signal(s) detected.`
+        : "No high-risk life signal detected.",
     },
   ];
 
-  prioritySnapshot.innerHTML = snapshotItems.map(renderSummaryItem).join("");
+  document.getElementById("prioritySnapshot").innerHTML = snapshotItems.map(renderSummaryItem).join("");
 
-  const recentEntries = document.getElementById("recentEntries");
-  const allEntries = [
-    ...vault.capsules.map((item) => ({ title: item.title, detail: `Capsule, ${formatDate(item.createdAt)}` })),
-    ...vault.dreams.map((item) => ({ title: item.title, detail: `Dream, ${item.mood}` })),
-    ...vault.legacyNotes.map((item) => ({ title: item.title, detail: `Legacy, ${item.category}` })),
-    ...vault.memories.map((item) => ({ title: item.title, detail: `Memory, ${item.category}` })),
-    ...vault.blackBoxEvents.map((item) => ({
-      title: item.title,
-      detail: `Black Box, ${getRiskLabel(calculateBlackBoxRisk(item))} risk`,
-    })),
-  ].slice(0, 5);
+  const recentEntries = vault.records.slice(0, 5).map((record) => ({
+    title: record.title,
+    detail: `${recordTypeLabels[record.type]} | ${getRiskLabel(calculateRisk(record))} risk`,
+  }));
 
-  recentEntries.innerHTML = allEntries.length
-    ? allEntries.map(renderSummaryItem).join("")
-    : renderSummaryItem({ title: "No records yet", detail: "The vault is ready for first entry." });
+  document.getElementById("recentEntries").innerHTML = recentEntries.length
+    ? recentEntries.map(renderSummaryItem).join("")
+    : renderSummaryItem({ title: "No life records yet", detail: "Add one record and LifeVault starts learning patterns." });
 }
 
-function getNextCapsuleText() {
-  const upcoming = vault.capsules
-    .map((capsule) => ({ ...capsule, remaining: daysUntil(capsule.unlockDate) }))
-    .filter((capsule) => capsule.remaining > 0)
+function getNextLockedRecordText() {
+  const nextRecord = vault.records
+    .filter(isLocked)
+    .map((record) => ({ ...record, remaining: daysUntil(record.unlockDate) }))
     .sort((a, b) => a.remaining - b.remaining)[0];
 
-  if (!upcoming) {
-    return "No locked capsules waiting.";
+  if (!nextRecord) {
+    return "No locked future records waiting.";
   }
 
-  return `${upcoming.title} opens in ${upcoming.remaining} day(s).`;
+  return `${nextRecord.title} opens in ${nextRecord.remaining} day(s).`;
 }
 
 function renderSummaryItem(item) {
@@ -304,174 +413,6 @@ function renderSummaryItem(item) {
   `;
 }
 
-function renderCapsules() {
-  const capsuleList = document.getElementById("capsuleList");
-
-  capsuleList.innerHTML = vault.capsules.length
-    ? vault.capsules
-        .map((capsule) => {
-          const remaining = daysUntil(capsule.unlockDate);
-          const unlocked = remaining <= 0;
-          return `
-            <article class="record-card">
-              <div class="record-head">
-                <div>
-                  <h3>${escapeHtml(capsule.title)}</h3>
-                  <div class="record-meta">Unlock date: ${formatDate(capsule.unlockDate)}</div>
-                </div>
-                <span class="pill ${unlocked ? "open" : ""}">
-                  ${unlocked ? "Unlocked" : `${remaining} day(s) left`}
-                </span>
-              </div>
-              <p class="record-body">${unlocked ? escapeHtml(capsule.message) : "This message is locked until its unlock date."}</p>
-            </article>
-          `;
-        })
-        .join("")
-    : renderEmptyRecord("No time capsules saved.");
-}
-
-function renderDreams() {
-  const dreamPatterns = document.getElementById("dreamPatterns");
-  const keywordStats = getKeywordStats().slice(0, 6);
-  const moodStats = getMoodStats().slice(0, 4);
-  const patternItems = [
-    ...keywordStats.map(([keyword, count]) => ({ label: keyword, value: `${count} keyword hit(s)` })),
-    ...moodStats.map(([mood, count]) => ({ label: mood, value: `${count} mood record(s)` })),
-  ];
-
-  dreamPatterns.innerHTML = patternItems.length
-    ? patternItems
-        .map(
-          (item) => `
-            <div class="pattern-item">
-              <strong>${escapeHtml(item.label)}</strong>
-              <span>${escapeHtml(item.value)}</span>
-            </div>
-          `,
-        )
-        .join("")
-    : renderEmptyRecord("No dream patterns yet.");
-
-  document.getElementById("dreamList").innerHTML = vault.dreams.length
-    ? vault.dreams
-        .map(
-          (dream) => `
-            <article class="record-card">
-              <div class="record-head">
-                <div>
-                  <h3>${escapeHtml(dream.title)}</h3>
-                  <div class="record-meta">${escapeHtml(dream.mood)} mood, ${formatDate(dream.createdAt)}</div>
-                </div>
-                <span class="pill open">${escapeHtml(dream.keywords || "No keywords")}</span>
-              </div>
-              <p class="record-body">${escapeHtml(dream.notes)}</p>
-            </article>
-          `,
-        )
-        .join("")
-    : renderEmptyRecord("No dream entries saved.");
-}
-
-function renderLegacyNotes() {
-  document.getElementById("legacyList").innerHTML = vault.legacyNotes.length
-    ? vault.legacyNotes
-        .map(
-          (note) => `
-            <article class="record-card">
-              <div class="record-head">
-                <div>
-                  <h3>${escapeHtml(note.title)}</h3>
-                  <div class="record-meta">${escapeHtml(note.category)}, ${formatDate(note.createdAt)}</div>
-                </div>
-              </div>
-              <p class="record-body">${escapeHtml(note.message)}</p>
-            </article>
-          `,
-        )
-        .join("")
-    : renderEmptyRecord("No legacy notes saved.");
-}
-
-function renderMemories() {
-  document.getElementById("memoryList").innerHTML = vault.memories.length
-    ? vault.memories
-        .map(
-          (memory) => `
-            <article class="record-card">
-              <div class="record-head">
-                <div>
-                  <h3>${escapeHtml(memory.title)}</h3>
-                  <div class="record-meta">${escapeHtml(memory.category)}, ${formatDate(memory.createdAt)}</div>
-                </div>
-              </div>
-              <p class="record-body">${escapeHtml(memory.message)}</p>
-            </article>
-          `,
-        )
-        .join("")
-    : renderEmptyRecord("No memories saved.");
-}
-
-function renderBlackBox() {
-  const stats = getBlackBoxRiskStats();
-  const signalItems = [
-    {
-      label: "High-Risk Events",
-      value: `${stats.highRiskEvents.length} event(s)`,
-    },
-    {
-      label: "Average Stress",
-      value: vault.blackBoxEvents.length ? `${stats.averageStress}/10` : "No events yet",
-    },
-    {
-      label: "Average Energy",
-      value: vault.blackBoxEvents.length ? `${stats.averageEnergy}/10` : "No events yet",
-    },
-    {
-      label: "Bad Outcomes",
-      value: `${stats.badOutcomes} outcome(s)`,
-    },
-  ];
-
-  document.getElementById("blackBoxSignals").innerHTML = signalItems
-    .map(
-      (item) => `
-        <div class="pattern-item">
-          <strong>${escapeHtml(item.label)}</strong>
-          <span>${escapeHtml(item.value)}</span>
-        </div>
-      `,
-    )
-    .join("");
-
-  document.getElementById("blackBoxList").innerHTML = vault.blackBoxEvents.length
-    ? vault.blackBoxEvents
-        .map((event) => {
-          const riskScore = calculateBlackBoxRisk(event);
-          return `
-            <article class="record-card">
-              <div class="record-head">
-                <div>
-                  <h3>${escapeHtml(event.title)}</h3>
-                  <div class="record-meta">
-                    ${formatDate(event.createdAt)} | Mood: ${escapeHtml(event.mood)} | Stress ${event.stress}/10 | Energy ${event.energy}/10
-                  </div>
-                </div>
-                <span class="pill ${riskScore < 60 ? "open" : ""}">${getRiskLabel(riskScore)} ${riskScore}%</span>
-              </div>
-              <p class="record-body">Decision: ${escapeHtml(event.decision || "Not recorded")}\nOutcome: ${escapeHtml(event.outcome)}\n${escapeHtml(event.notes)}</p>
-            </article>
-          `;
-        })
-        .join("")
-    : renderEmptyRecord("No Human Black Box events saved.");
-}
-
-function renderEmptyRecord(message) {
-  return `<div class="summary-item"><strong>${escapeHtml(message)}</strong><span>Ready when you are.</span></div>`;
-}
-
 function renderEmergencyModule() {
   document.getElementById("fullNameInput").value = vault.emergency.fullName;
   document.getElementById("bloodGroupInput").value = vault.emergency.bloodGroup;
@@ -481,6 +422,78 @@ function renderEmergencyModule() {
   document.getElementById("contactPhoneInput").value = vault.emergency.contactPhone;
   document.getElementById("routineInput").value = vault.emergency.routine;
   renderEmergencyCard(document.getElementById("emergencyCard"));
+}
+
+function renderTimeline() {
+  document.getElementById("recordTimeline").innerHTML = vault.records.length
+    ? vault.records.map(renderRecordCard).join("")
+    : renderEmptyRecord("No life records saved.");
+}
+
+function renderRecordCard(record) {
+  const riskScore = calculateRisk(record);
+  const locked = isLocked(record);
+  const body = locked ? "This future record is locked until its unlock date." : escapeHtml(record.body);
+
+  return `
+    <article class="record-card">
+      <div class="record-head">
+        <div>
+          <h3>${escapeHtml(record.title)}</h3>
+          <div class="record-meta">
+            ${recordTypeLabels[record.type]} | ${formatDate(record.createdAt)} | Mood: ${escapeHtml(record.mood)}
+          </div>
+        </div>
+        <span class="pill ${riskScore < 60 ? "open" : ""}">${locked ? `${daysUntil(record.unlockDate)} day(s) left` : `${getRiskLabel(riskScore)} ${riskScore}%`}</span>
+      </div>
+      <p class="record-body">Decision: ${escapeHtml(record.decision || "Not recorded")}\nOutcome: ${escapeHtml(record.outcome)}\nTags: ${escapeHtml(record.tags || "No tags")}\n${body}</p>
+    </article>
+  `;
+}
+
+function renderInsights() {
+  const signalStats = getSignalStats();
+  const moodStats = getMoodStats().slice(0, 5);
+  const tagStats = getTagStats().slice(0, 8);
+  const signalItems = [
+    { label: "High-Risk Records", value: `${signalStats.highRiskRecords.length} record(s)` },
+    { label: "Average Stress", value: vault.records.length ? `${signalStats.averageStress}/10` : "No records yet" },
+    { label: "Average Energy", value: vault.records.length ? `${signalStats.averageEnergy}/10` : "No records yet" },
+    { label: "Bad Outcomes", value: `${signalStats.badOutcomes} outcome(s)` },
+    { label: "Locked Future Records", value: `${signalStats.lockedRecords.length} record(s)` },
+  ];
+
+  document.getElementById("insightSignals").innerHTML = signalItems.map(renderPatternItem).join("");
+
+  const patternItems = [
+    ...tagStats.map(([label, count]) => ({ label, value: `${count} tag hit(s)` })),
+    ...moodStats.map(([label, count]) => ({ label, value: `${count} mood record(s)` })),
+  ];
+
+  document.getElementById("patternInsights").innerHTML = patternItems.length
+    ? patternItems.map(renderPatternItem).join("")
+    : renderEmptyRecord("No patterns yet.");
+
+  document.getElementById("highRiskList").innerHTML = signalStats.highRiskRecords.length
+    ? signalStats.highRiskRecords.map(renderRecordCard).join("")
+    : renderEmptyRecord("No records currently need attention.");
+}
+
+function renderPatternItem(item) {
+  return `
+    <div class="pattern-item">
+      <strong>${escapeHtml(item.label)}</strong>
+      <span>${escapeHtml(item.value)}</span>
+    </div>
+  `;
+}
+
+function renderEmptyRecord(message) {
+  return `<div class="summary-item"><strong>${escapeHtml(message)}</strong><span>Ready when you are.</span></div>`;
+}
+
+function updateTypeHint() {
+  recordTypeHint.textContent = recordTypeHints[recordTypeInput.value];
 }
 
 function showSection(section) {
@@ -497,15 +510,13 @@ function showSection(section) {
 
 function render() {
   todayText.textContent = formatDate(todayIso());
-  const totalRecords = getTotalRecords();
+  const totalRecords = vault.records.length;
   recordCountText.textContent = `${totalRecords} ${totalRecords === 1 ? "record" : "records"}`;
   renderDashboard();
   renderEmergencyModule();
-  renderCapsules();
-  renderDreams();
-  renderLegacyNotes();
-  renderMemories();
-  renderBlackBox();
+  renderTimeline();
+  renderInsights();
+  updateTypeHint();
 }
 
 unlockForm.addEventListener("submit", (event) => {
@@ -538,6 +549,8 @@ document.querySelectorAll(".nav-button").forEach((button) => {
   button.addEventListener("click", () => showSection(button.dataset.section));
 });
 
+recordTypeInput.addEventListener("change", updateTypeHint);
+
 document.getElementById("emergencyProfileForm").addEventListener("submit", (event) => {
   event.preventDefault();
   vault.emergency = {
@@ -553,62 +566,25 @@ document.getElementById("emergencyProfileForm").addEventListener("submit", (even
   render();
 });
 
-document.getElementById("capsuleForm").addEventListener("submit", (event) => {
+document.getElementById("recordForm").addEventListener("submit", (event) => {
   event.preventDefault();
-  addRecord("capsules", {
-    title: document.getElementById("capsuleTitleInput").value.trim(),
-    unlockDate: document.getElementById("capsuleDateInput").value,
-    message: document.getElementById("capsuleMessageInput").value.trim(),
+  addLifeRecord({
+    title: document.getElementById("recordTitleInput").value.trim(),
+    type: recordTypeInput.value,
+    mood: document.getElementById("recordMoodInput").value,
+    tags: document.getElementById("recordTagsInput").value.trim(),
+    unlockDate: document.getElementById("recordUnlockDateInput").value,
+    outcome: document.getElementById("recordOutcomeInput").value,
+    stress: document.getElementById("recordStressInput").value,
+    energy: document.getElementById("recordEnergyInput").value,
+    decision: document.getElementById("recordDecisionInput").value.trim(),
+    body: document.getElementById("recordBodyInput").value.trim(),
   });
   event.target.reset();
+  document.getElementById("recordStressInput").value = 5;
+  document.getElementById("recordEnergyInput").value = 5;
+  updateTypeHint();
 });
 
-document.getElementById("dreamForm").addEventListener("submit", (event) => {
-  event.preventDefault();
-  addRecord("dreams", {
-    title: document.getElementById("dreamTitleInput").value.trim(),
-    mood: document.getElementById("dreamMoodInput").value,
-    keywords: document.getElementById("dreamKeywordsInput").value.trim(),
-    notes: document.getElementById("dreamNotesInput").value.trim(),
-  });
-  event.target.reset();
-});
-
-document.getElementById("legacyForm").addEventListener("submit", (event) => {
-  event.preventDefault();
-  addRecord("legacyNotes", {
-    title: document.getElementById("legacyTitleInput").value.trim(),
-    category: document.getElementById("legacyCategoryInput").value,
-    message: document.getElementById("legacyMessageInput").value.trim(),
-  });
-  event.target.reset();
-});
-
-document.getElementById("memoryForm").addEventListener("submit", (event) => {
-  event.preventDefault();
-  addRecord("memories", {
-    title: document.getElementById("memoryTitleInput").value.trim(),
-    category: document.getElementById("memoryCategoryInput").value,
-    message: document.getElementById("memoryMessageInput").value.trim(),
-  });
-  event.target.reset();
-});
-
-document.getElementById("blackBoxForm").addEventListener("submit", (event) => {
-  event.preventDefault();
-  addRecord("blackBoxEvents", {
-    title: document.getElementById("blackBoxTitleInput").value.trim(),
-    mood: document.getElementById("blackBoxMoodInput").value,
-    stress: document.getElementById("blackBoxStressInput").value,
-    energy: document.getElementById("blackBoxEnergyInput").value,
-    decision: document.getElementById("blackBoxDecisionInput").value.trim(),
-    outcome: document.getElementById("blackBoxOutcomeInput").value,
-    notes: document.getElementById("blackBoxNotesInput").value.trim(),
-  });
-  event.target.reset();
-  document.getElementById("blackBoxStressInput").value = 5;
-  document.getElementById("blackBoxEnergyInput").value = 5;
-});
-
-document.getElementById("capsuleDateInput").min = todayIso();
+document.getElementById("recordUnlockDateInput").min = todayIso();
 render();

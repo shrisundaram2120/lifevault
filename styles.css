@@ -1,20 +1,20 @@
 :root {
-  --bg: #f6f7f4;
-  --ink: #1f2528;
-  --muted: #5f6b70;
-  --surface: #ffffff;
-  --surface-2: #eef1ee;
-  --paper: #fff9e8;
-  --paper-line: #dfd2b7;
-  --line: #d9dfdc;
-  --teal: #16645d;
-  --teal-dark: #0f4b46;
-  --red: #a33a2c;
-  --amber: #9a6a24;
-  --green: #3e7b50;
-  --blue: #3867a8;
-  --violet: #70549a;
-  --shadow: 0 8px 24px rgba(31, 37, 40, 0.08);
+  --bg: #11130f;
+  --ink: #f3f7ed;
+  --muted: #aab3a3;
+  --surface: #181c16;
+  --surface-2: #22281f;
+  --paper: #f7efcf;
+  --paper-line: #cfc099;
+  --line: #343d30;
+  --teal: #7cff6b;
+  --teal-dark: #38d95b;
+  --red: #ff5c7a;
+  --amber: #ffb84d;
+  --green: #b6ff6a;
+  --plasma: #ff4fd8;
+  --violet: #b56cff;
+  --shadow: 0 14px 36px rgba(124, 255, 107, 0.1);
   --radius: 6px;
 }
 
@@ -26,8 +26,8 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    linear-gradient(90deg, rgba(31, 37, 40, 0.025) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(31, 37, 40, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 255, 107, 0.055) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 79, 216, 0.045) 1px, transparent 1px),
     var(--bg);
   background-size: 28px 28px;
   color: var(--ink);
@@ -52,7 +52,7 @@ button {
 }
 
 button:hover:not(:disabled) {
-  border-color: #aeb9b5;
+  border-color: var(--teal);
 }
 
 button:disabled {
@@ -66,7 +66,7 @@ select {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: #fffefb;
+  background: #10140f;
   color: var(--ink);
   padding: 10px 11px;
 }
@@ -78,7 +78,7 @@ textarea {
 input:focus,
 textarea:focus,
 select:focus {
-  outline: 3px solid rgba(15, 118, 110, 0.16);
+  outline: 3px solid rgba(124, 255, 107, 0.18);
   border-color: var(--teal);
 }
 
@@ -131,9 +131,11 @@ legend {
 
 .brand-block {
   grid-row: span 2;
-  background: #173c38;
+  background:
+    linear-gradient(135deg, rgba(124, 255, 107, 0.16), rgba(255, 79, 216, 0.11)),
+    #10140f;
   color: #f8fbf9;
-  border-color: #173c38;
+  border-color: #384632;
   padding: clamp(26px, 5vw, 50px);
   display: flex;
   flex-direction: column;
@@ -151,7 +153,7 @@ legend {
 }
 
 .brand-block .eyebrow {
-  color: #cfe2dc;
+  color: #caffbc;
 }
 
 h1,
@@ -238,7 +240,7 @@ h3 {
 
 .primary {
   background: var(--teal);
-  color: #fff;
+  color: #11130f;
 }
 
 .primary:hover {
@@ -247,7 +249,7 @@ h3 {
 
 .secondary,
 .quiet {
-  background: #f7f8f5;
+  background: #20261d;
   border-color: var(--line);
   color: var(--ink);
 }
@@ -315,9 +317,9 @@ h3 {
 }
 
 .nav-button.active {
-  background: #eaf2ee;
-  border-color: #d1ddd8;
-  color: var(--teal-dark);
+  background: rgba(124, 255, 107, 0.11);
+  border-color: rgba(124, 255, 107, 0.28);
+  color: var(--teal);
   border-left: 3px solid var(--teal);
 }
 
@@ -391,7 +393,7 @@ h3 {
 
 .status-strip span {
   padding: 8px 10px;
-  background: #f7f8f5;
+  background: #20261d;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   color: var(--muted);
@@ -450,7 +452,7 @@ h3 {
 }
 
 .portal-card em {
-  color: var(--teal-dark);
+  color: var(--teal);
   font-style: normal;
   font-weight: 800;
 }
@@ -464,7 +466,7 @@ h3 {
 }
 
 .accent-legacy {
-  border-left-color: var(--blue);
+  border-left-color: var(--plasma);
 }
 
 .accent-memory {
@@ -507,8 +509,8 @@ h3 {
   border-left: 4px solid var(--green);
 }
 
-.accent-blue {
-  border-left: 4px solid var(--blue);
+.accent-plasma {
+  border-left: 4px solid var(--plasma);
 }
 
 .wide-panel,
@@ -562,7 +564,7 @@ h3 {
 .summary-item,
 .pattern-item {
   padding: 11px;
-  background: #f8f9f6;
+  background: #20261d;
   border: 1px solid var(--line);
   border-radius: var(--radius);
 }
@@ -617,10 +619,11 @@ h3 {
   border: 1px solid var(--paper-line);
   border-radius: var(--radius);
   background:
-    linear-gradient(90deg, rgba(31, 37, 40, 0.06) 0, rgba(31, 37, 40, 0) 32px),
-    repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0) 0 34px, rgba(56, 103, 168, 0.08) 35px),
+    linear-gradient(90deg, rgba(17, 19, 15, 0.08) 0, rgba(17, 19, 15, 0) 32px),
+    repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0) 0 34px, rgba(255, 79, 216, 0.1) 35px),
     var(--paper);
   box-shadow: 0 12px 26px rgba(71, 54, 31, 0.12);
+  color: #171a12;
   font-family: Georgia, "Times New Roman", serif;
   transform-origin: left center;
   animation: pageIn 180ms ease;
@@ -644,7 +647,9 @@ h3 {
   justify-items: center;
   gap: 18px;
   text-align: center;
-  background: #f6ecd2;
+  background:
+    linear-gradient(135deg, rgba(124, 255, 107, 0.18), rgba(255, 184, 77, 0.2)),
+    #f7efcf;
 }
 
 .cover-page h2 {
@@ -658,7 +663,7 @@ h3 {
 
 .cover-page span {
   max-width: 540px;
-  color: var(--muted);
+  color: #4d5545;
   line-height: 1.5;
 }
 
@@ -682,7 +687,11 @@ h3 {
   padding: 11px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: #fffefb;
+  background: rgba(24, 28, 22, 0.88);
+}
+
+.book-page .front-page-grid div {
+  background: rgba(255, 254, 251, 0.62);
 }
 
 .front-page-grid span,
@@ -721,7 +730,7 @@ h3 {
 
 .diary-entry-page textarea {
   min-height: 260px;
-  background: rgba(255, 254, 251, 0.82);
+  background: rgba(17, 19, 15, 0.88);
   line-height: 1.6;
   font-family: Georgia, "Times New Roman", serif;
   font-size: 1rem;
@@ -757,7 +766,7 @@ h3 {
   padding: 13px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: #f8f9f6;
+  background: #20261d;
 }
 
 .record-card {
@@ -789,18 +798,18 @@ h3 {
   align-self: start;
   padding: 6px 8px;
   border-radius: var(--radius);
-  background: #f8efe2;
-  border: 1px solid #e7d0aa;
-  color: #7a4b11;
+  background: rgba(255, 184, 77, 0.12);
+  border: 1px solid rgba(255, 184, 77, 0.34);
+  color: var(--amber);
   font-size: 0.82rem;
   font-weight: 800;
   white-space: nowrap;
 }
 
 .pill.open {
-  background: #eef7ef;
-  border-color: #c8dfcf;
-  color: #2e6a3e;
+  background: rgba(124, 255, 107, 0.11);
+  border-color: rgba(124, 255, 107, 0.34);
+  color: var(--teal);
 }
 
 .memory-grid {
@@ -812,7 +821,7 @@ h3 {
 .memory-card {
   padding: 16px;
   box-shadow: none;
-  background: #fffefb;
+  background: #181c16;
 }
 
 .memory-card-top,
@@ -857,7 +866,7 @@ h3 {
   padding: 10px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: #f8f9f6;
+  background: #20261d;
 }
 
 .suggestion-row input[type="checkbox"],

@@ -16,6 +16,7 @@ const emptyVault = {
   dreams: [],
   legacyNotes: [],
   memories: [],
+  blackBoxEvents: [],
 };
 
 let vault = loadVault();
@@ -42,6 +43,7 @@ const sections = {
   dreams: document.getElementById("dreamsSection"),
   legacy: document.getElementById("legacySection"),
   memories: document.getElementById("memoriesSection"),
+  blackbox: document.getElementById("blackboxSection"),
 };
 
 const sectionNames = {
@@ -51,6 +53,7 @@ const sectionNames = {
   dreams: "Dream Patterns",
   legacy: "Legacy Notes",
   memories: "Memory Lane",
+  blackbox: "Human Black Box",
 };
 
 function loadVault() {
@@ -113,7 +116,13 @@ function addRecord(collectionName, record) {
 }
 
 function getTotalRecords() {
-  return vault.capsules.length + vault.dreams.length + vault.legacyNotes.length + vault.memories.length;
+  return (
+    vault.capsules.length +
+    vault.dreams.length +
+    vault.legacyNotes.length +
+    vault.memories.length +
+    vault.blackBoxEvents.length
+  );
 }
 
 function isEmergencyComplete() {
@@ -142,6 +151,57 @@ function getMoodStats() {
   });
 
   return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+}
+
+function getBlackBoxRiskStats() {
+  const events = vault.blackBoxEvents;
+  const highRiskEvents = events.filter((event) => calculateBlackBoxRisk(event) >= 70);
+  const averageStress = events.length
+    ? Math.round(events.reduce((total, event) => total + Number(event.stress), 0) / events.length)
+    : 0;
+  const averageEnergy = events.length
+    ? Math.round(events.reduce((total, event) => total + Number(event.energy), 0) / events.length)
+    : 0;
+  const badOutcomes = events.filter((event) => event.outcome === "Bad").length;
+
+  return { highRiskEvents, averageStress, averageEnergy, badOutcomes };
+}
+
+function calculateBlackBoxRisk(event) {
+  let score = 0;
+  const stress = Number(event.stress);
+  const energy = Number(event.energy);
+
+  score += stress * 7;
+  score += (10 - energy) * 4;
+
+  if (event.outcome === "Bad") {
+    score += 20;
+  } else if (event.outcome === "Neutral") {
+    score += 8;
+  }
+
+  if (["Stressed", "Angry", "Low"].includes(event.mood)) {
+    score += 12;
+  }
+
+  return Math.min(100, score);
+}
+
+function getRiskLabel(score) {
+  if (score >= 80) {
+    return "Critical";
+  }
+
+  if (score >= 60) {
+    return "High";
+  }
+
+  if (score >= 35) {
+    return "Moderate";
+  }
+
+  return "Low";
 }
 
 function renderEmergencyCard(target) {
@@ -174,6 +234,7 @@ function renderEmergencyCard(target) {
 function renderDashboard() {
   const lockedCapsules = vault.capsules.filter((capsule) => daysUntil(capsule.unlockDate) > 0).length;
   const keywordStats = getKeywordStats();
+  const blackBoxStats = getBlackBoxRiskStats();
 
   document.getElementById("emergencyStatus").textContent = isEmergencyComplete() ? "Ready" : "Incomplete";
   document.getElementById("lockedCapsuleCount").textContent = lockedCapsules;
@@ -194,6 +255,12 @@ function renderDashboard() {
       title: "Top Dream Pattern",
       detail: keywordStats[0] ? `${keywordStats[0][0]} appeared ${keywordStats[0][1]} time(s).` : "No dream keywords yet.",
     },
+    {
+      title: "Human Black Box",
+      detail: blackBoxStats.highRiskEvents.length
+        ? `${blackBoxStats.highRiskEvents.length} high-risk signal(s) detected.`
+        : "No high-risk personal patterns detected.",
+    },
   ];
 
   prioritySnapshot.innerHTML = snapshotItems.map(renderSummaryItem).join("");
@@ -204,6 +271,10 @@ function renderDashboard() {
     ...vault.dreams.map((item) => ({ title: item.title, detail: `Dream, ${item.mood}` })),
     ...vault.legacyNotes.map((item) => ({ title: item.title, detail: `Legacy, ${item.category}` })),
     ...vault.memories.map((item) => ({ title: item.title, detail: `Memory, ${item.category}` })),
+    ...vault.blackBoxEvents.map((item) => ({
+      title: item.title,
+      detail: `Black Box, ${getRiskLabel(calculateBlackBoxRisk(item))} risk`,
+    })),
   ].slice(0, 5);
 
   recentEntries.innerHTML = allEntries.length
@@ -342,6 +413,61 @@ function renderMemories() {
     : renderEmptyRecord("No memories saved.");
 }
 
+function renderBlackBox() {
+  const stats = getBlackBoxRiskStats();
+  const signalItems = [
+    {
+      label: "High-Risk Events",
+      value: `${stats.highRiskEvents.length} event(s)`,
+    },
+    {
+      label: "Average Stress",
+      value: vault.blackBoxEvents.length ? `${stats.averageStress}/10` : "No events yet",
+    },
+    {
+      label: "Average Energy",
+      value: vault.blackBoxEvents.length ? `${stats.averageEnergy}/10` : "No events yet",
+    },
+    {
+      label: "Bad Outcomes",
+      value: `${stats.badOutcomes} outcome(s)`,
+    },
+  ];
+
+  document.getElementById("blackBoxSignals").innerHTML = signalItems
+    .map(
+      (item) => `
+        <div class="pattern-item">
+          <strong>${escapeHtml(item.label)}</strong>
+          <span>${escapeHtml(item.value)}</span>
+        </div>
+      `,
+    )
+    .join("");
+
+  document.getElementById("blackBoxList").innerHTML = vault.blackBoxEvents.length
+    ? vault.blackBoxEvents
+        .map((event) => {
+          const riskScore = calculateBlackBoxRisk(event);
+          return `
+            <article class="record-card">
+              <div class="record-head">
+                <div>
+                  <h3>${escapeHtml(event.title)}</h3>
+                  <div class="record-meta">
+                    ${formatDate(event.createdAt)} | Mood: ${escapeHtml(event.mood)} | Stress ${event.stress}/10 | Energy ${event.energy}/10
+                  </div>
+                </div>
+                <span class="pill ${riskScore < 60 ? "open" : ""}">${getRiskLabel(riskScore)} ${riskScore}%</span>
+              </div>
+              <p class="record-body">Decision: ${escapeHtml(event.decision || "Not recorded")}\nOutcome: ${escapeHtml(event.outcome)}\n${escapeHtml(event.notes)}</p>
+            </article>
+          `;
+        })
+        .join("")
+    : renderEmptyRecord("No Human Black Box events saved.");
+}
+
 function renderEmptyRecord(message) {
   return `<div class="summary-item"><strong>${escapeHtml(message)}</strong><span>Ready when you are.</span></div>`;
 }
@@ -379,6 +505,7 @@ function render() {
   renderDreams();
   renderLegacyNotes();
   renderMemories();
+  renderBlackBox();
 }
 
 unlockForm.addEventListener("submit", (event) => {
@@ -465,6 +592,22 @@ document.getElementById("memoryForm").addEventListener("submit", (event) => {
     message: document.getElementById("memoryMessageInput").value.trim(),
   });
   event.target.reset();
+});
+
+document.getElementById("blackBoxForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+  addRecord("blackBoxEvents", {
+    title: document.getElementById("blackBoxTitleInput").value.trim(),
+    mood: document.getElementById("blackBoxMoodInput").value,
+    stress: document.getElementById("blackBoxStressInput").value,
+    energy: document.getElementById("blackBoxEnergyInput").value,
+    decision: document.getElementById("blackBoxDecisionInput").value.trim(),
+    outcome: document.getElementById("blackBoxOutcomeInput").value,
+    notes: document.getElementById("blackBoxNotesInput").value.trim(),
+  });
+  event.target.reset();
+  document.getElementById("blackBoxStressInput").value = 5;
+  document.getElementById("blackBoxEnergyInput").value = 5;
 });
 
 document.getElementById("capsuleDateInput").min = todayIso();

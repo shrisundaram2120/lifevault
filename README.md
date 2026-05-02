@@ -9,6 +9,7 @@ It includes:
 - Dream journal with keyword and mood pattern analysis
 - Legacy notes
 - Memory Lane records
+- Human Black Box event recorder with risk-signal analysis
 - A C CLI assignment version using structures, pointers, and file handling
 
 ## Website Demo

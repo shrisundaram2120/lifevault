@@ -44,6 +44,7 @@
           <button class="nav-button" type="button" data-section="dreams">Dream Patterns</button>
           <button class="nav-button" type="button" data-section="legacy">Legacy Notes</button>
           <button class="nav-button" type="button" data-section="memories">Memory Lane</button>
+          <button class="nav-button" type="button" data-section="blackbox">Human Black Box</button>
         </nav>
         <button id="lockBtn" class="quiet" type="button">Lock Vault</button>
       </aside>
@@ -224,6 +225,56 @@
             <button class="primary" type="submit">Add Memory</button>
           </form>
           <div id="memoryList" class="record-list"></div>
+        </section>
+
+        <section id="blackboxSection" class="module hidden">
+          <form id="blackBoxForm" class="form-grid compact-form">
+            <label>
+              <span>Event Title</span>
+              <input id="blackBoxTitleInput" type="text" maxlength="80" required>
+            </label>
+            <label>
+              <span>Mood</span>
+              <select id="blackBoxMoodInput">
+                <option>Calm</option>
+                <option>Focused</option>
+                <option>Happy</option>
+                <option>Stressed</option>
+                <option>Angry</option>
+                <option>Low</option>
+              </select>
+            </label>
+            <label>
+              <span>Stress Level</span>
+              <input id="blackBoxStressInput" type="number" min="1" max="10" value="5" required>
+            </label>
+            <label>
+              <span>Energy Level</span>
+              <input id="blackBoxEnergyInput" type="number" min="1" max="10" value="5" required>
+            </label>
+            <label>
+              <span>Decision Made</span>
+              <input id="blackBoxDecisionInput" type="text" maxlength="120" placeholder="What choice did you make?">
+            </label>
+            <label>
+              <span>Outcome</span>
+              <select id="blackBoxOutcomeInput">
+                <option>Good</option>
+                <option>Neutral</option>
+                <option>Bad</option>
+              </select>
+            </label>
+            <label class="span-two">
+              <span>Incident Notes</span>
+              <textarea id="blackBoxNotesInput" rows="4" required></textarea>
+            </label>
+            <button class="primary" type="submit">Record Event</button>
+          </form>
+          <article class="preview-panel">
+            <h3>Risk Signal Analyzer</h3>
+            <div id="blackBoxSignals" class="pattern-grid"></div>
+          </article>
+          <div id="blackBoxList" class="record-list"></div>
         </section>
       </section>
     </section>

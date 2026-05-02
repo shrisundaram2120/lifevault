@@ -45,6 +45,16 @@ typedef struct {
     char message[TEXT_SIZE];
 } MemoryEntry;
 
+typedef struct {
+    char title[TITLE_SIZE];
+    char mood[30];
+    int stressLevel;
+    int energyLevel;
+    char decision[TEXT_SIZE];
+    char outcome[30];
+    char notes[TEXT_SIZE];
+} BlackBoxEvent;
+
 void clearInputBuffer(void);
 void readLine(char text[], int size);
 void initializeEmergencyProfile(EmergencyProfile *profile);
@@ -57,8 +67,11 @@ void addDreamEntry(DreamEntry dreams[], int *dreamCount);
 void analyzeDreamPatterns(const DreamEntry dreams[], int dreamCount);
 void addLegacyNote(LegacyNote notes[], int *noteCount);
 void addMemoryEntry(MemoryEntry memories[], int *memoryCount);
+void addBlackBoxEvent(BlackBoxEvent events[], int *eventCount);
+void analyzeBlackBoxEvents(const BlackBoxEvent events[], int eventCount);
 void displaySimpleReport(const LegacyNote notes[], int noteCount,
                          const MemoryEntry memories[], int memoryCount);
+int calculateBlackBoxRisk(const BlackBoxEvent *event);
 int dateToNumber(const char date[]);
 int todayToNumber(void);
 
@@ -68,10 +81,12 @@ int main(void) {
     DreamEntry dreams[MAX_RECORDS];
     LegacyNote legacyNotes[MAX_RECORDS];
     MemoryEntry memories[MAX_RECORDS];
+    BlackBoxEvent blackBoxEvents[MAX_RECORDS];
     int capsuleCount = 0;
     int dreamCount = 0;
     int noteCount = 0;
     int memoryCount = 0;
+    int blackBoxCount = 0;
     int choice = 0;
     int startChoice = 0;
     int unlocked = 0;
@@ -125,8 +140,10 @@ int main(void) {
         printf("6. Analyze Dream Patterns\n");
         printf("7. Add Legacy Note\n");
         printf("8. Add Memory Lane Entry\n");
-        printf("9. Display Vault Report\n");
-        printf("10. Exit\n");
+        printf("9. Add Human Black Box Event\n");
+        printf("10. Analyze Human Black Box\n");
+        printf("11. Display Vault Report\n");
+        printf("12. Exit\n");
         printf("Enter your choice: ");
 
         if (scanf("%d", &choice) != 1) {
@@ -162,17 +179,24 @@ int main(void) {
                 addMemoryEntry(memories, &memoryCount);
                 break;
             case 9:
+                addBlackBoxEvent(blackBoxEvents, &blackBoxCount);
+                break;
+            case 10:
+                analyzeBlackBoxEvents(blackBoxEvents, blackBoxCount);
+                break;
+            case 11:
                 displaySimpleReport(legacyNotes, noteCount, memories, memoryCount);
                 printf("Time capsules: %d\n", capsuleCount);
                 printf("Dream entries: %d\n", dreamCount);
+                printf("Human Black Box events: %d\n", blackBoxCount);
                 break;
-            case 10:
+            case 12:
                 printf("LifeVault locked. Records saved to %s.\n", FILE_NAME);
                 break;
             default:
                 printf("Invalid choice.\n");
         }
-    } while (choice != 10);
+    } while (choice != 12);
 
     return 0;
 }
@@ -371,6 +395,96 @@ void addMemoryEntry(MemoryEntry memories[], int *memoryCount) {
     printf("Memory saved.\n");
 }
 
+void addBlackBoxEvent(BlackBoxEvent events[], int *eventCount) {
+    BlackBoxEvent *event;
+    char fileDetail[TEXT_SIZE * 2];
+
+    if (*eventCount >= MAX_RECORDS) {
+        printf("Human Black Box storage is full.\n");
+        return;
+    }
+
+    event = &events[*eventCount];
+    printf("\nEvent title: ");
+    readLine(event->title, TITLE_SIZE);
+    printf("Mood: ");
+    readLine(event->mood, sizeof(event->mood));
+    printf("Stress level (1-10): ");
+    scanf("%d", &event->stressLevel);
+    clearInputBuffer();
+    printf("Energy level (1-10): ");
+    scanf("%d", &event->energyLevel);
+    clearInputBuffer();
+    printf("Decision made: ");
+    readLine(event->decision, TEXT_SIZE);
+    printf("Outcome (Good/Neutral/Bad): ");
+    readLine(event->outcome, sizeof(event->outcome));
+    printf("Incident notes: ");
+    readLine(event->notes, TEXT_SIZE);
+
+    if (event->stressLevel < 1) {
+        event->stressLevel = 1;
+    } else if (event->stressLevel > 10) {
+        event->stressLevel = 10;
+    }
+
+    if (event->energyLevel < 1) {
+        event->energyLevel = 1;
+    } else if (event->energyLevel > 10) {
+        event->energyLevel = 10;
+    }
+
+    snprintf(fileDetail, sizeof(fileDetail), "Mood: %s, Stress: %d, Energy: %d, Outcome: %s",
+             event->mood, event->stressLevel, event->energyLevel, event->outcome);
+    (*eventCount)++;
+    saveTextRecord("Human Black Box", event->title, fileDetail);
+    printf("Human Black Box event saved.\n");
+}
+
+void analyzeBlackBoxEvents(const BlackBoxEvent events[], int eventCount) {
+    int i;
+    int riskScore;
+    int highRiskCount = 0;
+    int totalStress = 0;
+    int totalEnergy = 0;
+    int badOutcomeCount = 0;
+
+    if (eventCount == 0) {
+        printf("No Human Black Box events to analyze.\n");
+        return;
+    }
+
+    printf("\n---------- Human Black Box Risk Signals ----------\n");
+
+    for (i = 0; i < eventCount; i++) {
+        riskScore = calculateBlackBoxRisk(&events[i]);
+        totalStress += events[i].stressLevel;
+        totalEnergy += events[i].energyLevel;
+
+        if (riskScore >= 70) {
+            highRiskCount++;
+        }
+
+        if (strcmp(events[i].outcome, "Bad") == 0 || strcmp(events[i].outcome, "bad") == 0) {
+            badOutcomeCount++;
+        }
+
+        printf("%d. %s | Risk Score: %d/100 | Mood: %s | Outcome: %s\n",
+               i + 1, events[i].title, riskScore, events[i].mood, events[i].outcome);
+    }
+
+    printf("\nAverage stress: %d/10\n", totalStress / eventCount);
+    printf("Average energy: %d/10\n", totalEnergy / eventCount);
+    printf("High-risk events: %d\n", highRiskCount);
+    printf("Bad outcomes: %d\n", badOutcomeCount);
+
+    if (highRiskCount > 0) {
+        printf("Risk signal: Repeated stress, low energy, or bad outcomes need attention.\n");
+    } else {
+        printf("No strong risk signal detected from current records.\n");
+    }
+}
+
 void displaySimpleReport(const LegacyNote notes[], int noteCount,
                          const MemoryEntry memories[], int memoryCount) {
     int i;
@@ -385,6 +499,31 @@ void displaySimpleReport(const LegacyNote notes[], int noteCount,
     for (i = 0; i < memoryCount; i++) {
         printf("- %s (%s)\n", memories[i].title, memories[i].category);
     }
+}
+
+int calculateBlackBoxRisk(const BlackBoxEvent *event) {
+    int score = 0;
+
+    score += event->stressLevel * 7;
+    score += (10 - event->energyLevel) * 4;
+
+    if (strcmp(event->outcome, "Bad") == 0 || strcmp(event->outcome, "bad") == 0) {
+        score += 20;
+    } else if (strcmp(event->outcome, "Neutral") == 0 || strcmp(event->outcome, "neutral") == 0) {
+        score += 8;
+    }
+
+    if (strcmp(event->mood, "Stressed") == 0 || strcmp(event->mood, "Angry") == 0 ||
+        strcmp(event->mood, "Low") == 0 || strcmp(event->mood, "stressed") == 0 ||
+        strcmp(event->mood, "angry") == 0 || strcmp(event->mood, "low") == 0) {
+        score += 12;
+    }
+
+    if (score > 100) {
+        score = 100;
+    }
+
+    return score;
 }
 
 int dateToNumber(const char date[]) {

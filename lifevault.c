@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -9,6 +10,7 @@
 #define GMAIL_SIZE 80
 #define SECRET_SIZE 40
 #define DATE_SIZE 12
+#define QUESTION_SIZE 90
 #define FILE_NAME "lifevault_records.txt"
 #define PASSCODE_FILE "vault_passcode.txt"
 #define REMEMBERED_FILE "remembered_user.txt"
@@ -28,12 +30,15 @@ typedef struct {
     char type[40];
     char mood[30];
     char tags[TEXT_SIZE];
+    char entryDate[DATE_SIZE];
     char unlockDate[DATE_SIZE];
-    char outcome[30];
-    int stressLevel;
-    int energyLevel;
-    char decision[TEXT_SIZE];
-    char body[TEXT_SIZE];
+    char questionOne[QUESTION_SIZE];
+    char answerOne[TEXT_SIZE];
+    char questionTwo[QUESTION_SIZE];
+    char answerTwo[TEXT_SIZE];
+    char questionThree[QUESTION_SIZE];
+    char answerThree[TEXT_SIZE];
+    char diaryBody[TEXT_SIZE];
 } LifeRecord;
 
 typedef struct {
@@ -55,14 +60,18 @@ int loadRememberedUser(VaultUser *user);
 void createEmergencyProfile(EmergencyProfile *profile);
 void showEmergencyProfile(const EmergencyProfile *profile);
 void addLifeRecord(LifeRecord records[], int *recordCount);
+void chooseRecordType(LifeRecord *record);
+void setTypeQuestions(LifeRecord *record);
 void viewLifeTimeline(LifeRecord records[], int recordCount);
-void analyzeLifeSignals(const LifeRecord records[], int recordCount);
+void analyzeDiaryPatterns(const LifeRecord records[], int recordCount);
 void displayVaultReport(const LifeRecord records[], int recordCount);
 void saveRecordToFile(const LifeRecord *record);
-int calculateRecordRisk(const LifeRecord *record);
+int isReflectiveRecord(const LifeRecord *record);
+int containsIgnoreCase(const char text[], const char keyword[]);
 int isRecordLocked(const LifeRecord *record);
 int dateToNumber(const char date[]);
 int todayToNumber(void);
+void todayToDmy(char date[]);
 
 int main(void) {
     EmergencyProfile profile;
@@ -78,7 +87,7 @@ int main(void) {
     do {
         printf("=====================================\n");
         printf("              LIFEVAULT\n");
-        printf(" Personal Life Record System\n");
+        printf(" Personal Safety and Diary Vault\n");
         printf("=====================================\n");
         printf("1. View Emergency Card\n");
         printf("2. Join / Create Vault\n");
@@ -120,9 +129,9 @@ int main(void) {
         printf("\n-------------- LIFEVAULT: %s --------------\n", activeUser.name);
         printf("1. Update Emergency Profile\n");
         printf("2. Show Emergency Card\n");
-        printf("3. Add Life Record\n");
-        printf("4. View Life Timeline\n");
-        printf("5. Analyze Life Signals\n");
+        printf("3. Add Diary Life Record\n");
+        printf("4. View Diary Timeline\n");
+        printf("5. Analyze Diary Patterns\n");
         printf("6. Display Vault Report\n");
         printf("7. Exit\n");
         printf("Enter your choice: ");
@@ -148,7 +157,7 @@ int main(void) {
                 viewLifeTimeline(records, recordCount);
                 break;
             case 5:
-                analyzeLifeSignals(records, recordCount);
+                analyzeDiaryPatterns(records, recordCount);
                 break;
             case 6:
                 displayVaultReport(records, recordCount);
@@ -363,6 +372,7 @@ void showEmergencyProfile(const EmergencyProfile *profile) {
 
 void addLifeRecord(LifeRecord records[], int *recordCount) {
     LifeRecord *record;
+    char defaultDate[DATE_SIZE];
 
     if (*recordCount >= MAX_RECORDS) {
         printf("Life record storage is full.\n");
@@ -370,117 +380,167 @@ void addLifeRecord(LifeRecord records[], int *recordCount) {
     }
 
     record = &records[*recordCount];
+    memset(record, 0, sizeof(LifeRecord));
+    todayToDmy(defaultDate);
 
-    printf("\nRecord title: ");
+    printf("\nDiary entry title: ");
     readLine(record->title, TITLE_SIZE);
-    printf("Record type (Life Event/Future Message/Dream Signal/Legacy Instruction/Memory): ");
-    readLine(record->type, sizeof(record->type));
-    printf("Mood: ");
+    printf("Entry date (DD-MM-YYYY, blank for today %s): ", defaultDate);
+    readLine(record->entryDate, DATE_SIZE);
+    if (strlen(record->entryDate) == 0) {
+        strcpy(record->entryDate, defaultDate);
+    }
+
+    chooseRecordType(record);
+
+    printf("Mood or feeling: ");
     readLine(record->mood, sizeof(record->mood));
     printf("Tags or keywords: ");
     readLine(record->tags, TEXT_SIZE);
-    printf("Unlock date if future record (DD-MM-YYYY or blank): ");
-    readLine(record->unlockDate, DATE_SIZE);
-    printf("Outcome (Good/Neutral/Bad/Pending): ");
-    readLine(record->outcome, sizeof(record->outcome));
-    printf("Stress level (1-10): ");
-    scanf("%d", &record->stressLevel);
-    clearInputBuffer();
-    printf("Energy level (1-10): ");
-    scanf("%d", &record->energyLevel);
-    clearInputBuffer();
-    printf("Decision, promise, or main thought: ");
-    readLine(record->decision, TEXT_SIZE);
-    printf("Life record body: ");
-    readLine(record->body, TEXT_SIZE);
 
-    if (record->stressLevel < 1) {
-        record->stressLevel = 1;
-    } else if (record->stressLevel > 10) {
-        record->stressLevel = 10;
+    if (strstr(record->type, "Future") != NULL) {
+        printf("Unlock date for this future entry (DD-MM-YYYY): ");
+        readLine(record->unlockDate, DATE_SIZE);
+    } else {
+        strcpy(record->unlockDate, "");
     }
 
-    if (record->energyLevel < 1) {
-        record->energyLevel = 1;
-    } else if (record->energyLevel > 10) {
-        record->energyLevel = 10;
-    }
+    setTypeQuestions(record);
+
+    printf("%s: ", record->questionOne);
+    readLine(record->answerOne, TEXT_SIZE);
+    printf("%s: ", record->questionTwo);
+    readLine(record->answerTwo, TEXT_SIZE);
+    printf("%s: ", record->questionThree);
+    readLine(record->answerThree, TEXT_SIZE);
+    printf("Extra diary note: ");
+    readLine(record->diaryBody, TEXT_SIZE);
 
     (*recordCount)++;
     saveRecordToFile(record);
-    printf("Life record saved.\n");
+    printf("Diary life record saved.\n");
+}
+
+void chooseRecordType(LifeRecord *record) {
+    int typeChoice = 0;
+
+    printf("\nChoose diary type:\n");
+    printf("1. Life Event\n");
+    printf("2. Future Message\n");
+    printf("3. Dream Signal\n");
+    printf("4. Legacy Instruction\n");
+    printf("5. Memory or Goal\n");
+    printf("Enter type number: ");
+
+    if (scanf("%d", &typeChoice) != 1) {
+        typeChoice = 1;
+    }
+    clearInputBuffer();
+
+    switch (typeChoice) {
+        case 2:
+            strcpy(record->type, "Future Message");
+            break;
+        case 3:
+            strcpy(record->type, "Dream Signal");
+            break;
+        case 4:
+            strcpy(record->type, "Legacy Instruction");
+            break;
+        case 5:
+            strcpy(record->type, "Memory or Goal");
+            break;
+        default:
+            strcpy(record->type, "Life Event");
+            break;
+    }
+}
+
+void setTypeQuestions(LifeRecord *record) {
+    if (strstr(record->type, "Future") != NULL) {
+        strcpy(record->questionOne, "What should future you read");
+        strcpy(record->questionTwo, "Why should this open later");
+        strcpy(record->questionThree, "What reminder should it carry");
+    } else if (strstr(record->type, "Dream") != NULL) {
+        strcpy(record->questionOne, "What did you see in the dream");
+        strcpy(record->questionTwo, "How did it feel after waking up");
+        strcpy(record->questionThree, "Which symbols or words repeated");
+    } else if (strstr(record->type, "Legacy") != NULL) {
+        strcpy(record->questionOne, "Who is this meant for");
+        strcpy(record->questionTwo, "What message or instruction should remain");
+        strcpy(record->questionThree, "Why is this important");
+    } else if (strstr(record->type, "Memory") != NULL || strstr(record->type, "Goal") != NULL) {
+        strcpy(record->questionOne, "What memory or goal do you want to keep");
+        strcpy(record->questionTwo, "What made it meaningful");
+        strcpy(record->questionThree, "What next step or promise belongs with it");
+    } else {
+        strcpy(record->questionOne, "What happened");
+        strcpy(record->questionTwo, "Why did it matter");
+        strcpy(record->questionThree, "What did you learn or decide");
+    }
 }
 
 void viewLifeTimeline(LifeRecord records[], int recordCount) {
     int i;
 
     if (recordCount == 0) {
-        printf("No life records saved.\n");
+        printf("No diary entries saved.\n");
         return;
     }
 
-    printf("\n---------- Life Timeline ----------\n");
+    printf("\n---------- Diary Timeline ----------\n");
     for (i = 0; i < recordCount; i++) {
         printf("\n%d. %s [%s]\n", i + 1, records[i].title, records[i].type);
-        printf("Mood: %s | Stress: %d/10 | Energy: %d/10\n",
-               records[i].mood, records[i].stressLevel, records[i].energyLevel);
-        printf("Outcome: %s | Risk Score: %d/100\n",
-               records[i].outcome, calculateRecordRisk(&records[i]));
+        printf("Entry Date: %s | Mood: %s\n", records[i].entryDate, records[i].mood);
         printf("Tags: %s\n", records[i].tags);
 
         if (isRecordLocked(&records[i])) {
-            printf("Body: Locked until %s\n", records[i].unlockDate);
+            printf("Diary entry: Locked until %s\n", records[i].unlockDate);
         } else {
-            printf("Decision: %s\n", records[i].decision);
-            printf("Body: %s\n", records[i].body);
+            printf("%s: %s\n", records[i].questionOne, records[i].answerOne);
+            printf("%s: %s\n", records[i].questionTwo, records[i].answerTwo);
+            printf("%s: %s\n", records[i].questionThree, records[i].answerThree);
+            printf("Extra Diary Note: %s\n", records[i].diaryBody);
         }
     }
 }
 
-void analyzeLifeSignals(const LifeRecord records[], int recordCount) {
+void analyzeDiaryPatterns(const LifeRecord records[], int recordCount) {
     int i;
-    int riskScore;
-    int highRiskCount = 0;
     int lockedCount = 0;
-    int badOutcomeCount = 0;
-    int totalStress = 0;
-    int totalEnergy = 0;
+    int revisitCount = 0;
+    int taggedCount = 0;
 
     if (recordCount == 0) {
-        printf("No life records to analyze.\n");
+        printf("No diary entries to analyze.\n");
         return;
     }
 
-    printf("\n---------- Life Signal Analyzer ----------\n");
+    printf("\n---------- Diary Pattern Analyzer ----------\n");
     for (i = 0; i < recordCount; i++) {
-        riskScore = calculateRecordRisk(&records[i]);
-        totalStress += records[i].stressLevel;
-        totalEnergy += records[i].energyLevel;
-
-        if (riskScore >= 70) {
-            highRiskCount++;
-            printf("Attention: %s has high risk score %d/100.\n", records[i].title, riskScore);
-        }
-
         if (isRecordLocked(&records[i])) {
             lockedCount++;
         }
 
-        if (strcmp(records[i].outcome, "Bad") == 0 || strcmp(records[i].outcome, "bad") == 0) {
-            badOutcomeCount++;
+        if (strlen(records[i].tags) > 0) {
+            taggedCount++;
+        }
+
+        if (!isRecordLocked(&records[i]) && isReflectiveRecord(&records[i])) {
+            revisitCount++;
+            printf("Revisit suggestion: \"%s\" has a strong feeling or warning keyword.\n", records[i].title);
         }
     }
 
-    printf("\nAverage stress: %d/10\n", totalStress / recordCount);
-    printf("Average energy: %d/10\n", totalEnergy / recordCount);
-    printf("High-risk life records: %d\n", highRiskCount);
-    printf("Bad outcomes: %d\n", badOutcomeCount);
-    printf("Locked future records: %d\n", lockedCount);
+    printf("\nTotal diary entries: %d\n", recordCount);
+    printf("Entries with tags: %d\n", taggedCount);
+    printf("Locked future entries: %d\n", lockedCount);
+    printf("Entries to revisit: %d\n", revisitCount);
 
-    if (highRiskCount > 0 || badOutcomeCount > 1) {
-        printf("Main signal: repeated stress, low energy, or bad outcomes need attention.\n");
+    if (revisitCount > 0) {
+        printf("Main signal: some diary entries may need reflection later.\n");
     } else {
-        printf("Main signal: no strong risk pattern detected yet.\n");
+        printf("Main signal: no urgent revisit pattern found yet.\n");
     }
 }
 
@@ -499,7 +559,7 @@ void displayVaultReport(const LifeRecord records[], int recordCount) {
             dreamCount++;
         } else if (strstr(records[i].type, "Legacy") != NULL) {
             legacyCount++;
-        } else if (strstr(records[i].type, "Memory") != NULL) {
+        } else if (strstr(records[i].type, "Memory") != NULL || strstr(records[i].type, "Goal") != NULL) {
             memoryCount++;
         } else {
             eventCount++;
@@ -507,7 +567,7 @@ void displayVaultReport(const LifeRecord records[], int recordCount) {
     }
 
     printf("\n---------- Vault Report ----------\n");
-    printf("Total life records: %d\n", recordCount);
+    printf("Total diary life records: %d\n", recordCount);
     printf("Life events: %d\n", eventCount);
     printf("Future messages: %d\n", futureCount);
     printf("Dream signals: %d\n", dreamCount);
@@ -523,44 +583,66 @@ void saveRecordToFile(const LifeRecord *record) {
         return;
     }
 
-    fprintf(file, "[Life Record]\n");
+    fprintf(file, "[Diary Life Record]\n");
     fprintf(file, "Title: %s\n", record->title);
     fprintf(file, "Type: %s\n", record->type);
+    fprintf(file, "Entry Date: %s\n", record->entryDate);
     fprintf(file, "Mood: %s\n", record->mood);
-    fprintf(file, "Stress: %d\n", record->stressLevel);
-    fprintf(file, "Energy: %d\n", record->energyLevel);
-    fprintf(file, "Outcome: %s\n", record->outcome);
     fprintf(file, "Tags: %s\n", record->tags);
-    fprintf(file, "Decision: %s\n", record->decision);
-    fprintf(file, "Body: %s\n\n", record->body);
+    if (strlen(record->unlockDate) > 0) {
+        fprintf(file, "Unlock Date: %s\n", record->unlockDate);
+    }
+    fprintf(file, "%s: %s\n", record->questionOne, record->answerOne);
+    fprintf(file, "%s: %s\n", record->questionTwo, record->answerTwo);
+    fprintf(file, "%s: %s\n", record->questionThree, record->answerThree);
+    fprintf(file, "Extra Diary Note: %s\n\n", record->diaryBody);
     fclose(file);
 }
 
-int calculateRecordRisk(const LifeRecord *record) {
-    int score = 0;
-
-    score += record->stressLevel * 7;
-    score += (10 - record->energyLevel) * 4;
-
-    if (strcmp(record->outcome, "Bad") == 0 || strcmp(record->outcome, "bad") == 0) {
-        score += 20;
-    } else if (strcmp(record->outcome, "Neutral") == 0 || strcmp(record->outcome, "neutral") == 0 ||
-               strcmp(record->outcome, "Pending") == 0 || strcmp(record->outcome, "pending") == 0) {
-        score += 8;
+int isReflectiveRecord(const LifeRecord *record) {
+    if (containsIgnoreCase(record->mood, "anxious") ||
+        containsIgnoreCase(record->mood, "stressed") ||
+        containsIgnoreCase(record->mood, "angry") ||
+        containsIgnoreCase(record->mood, "low") ||
+        containsIgnoreCase(record->mood, "confused")) {
+        return 1;
     }
 
-    if (strcmp(record->mood, "Anxious") == 0 || strcmp(record->mood, "Stressed") == 0 ||
-        strcmp(record->mood, "Angry") == 0 || strcmp(record->mood, "Low") == 0 ||
-        strcmp(record->mood, "anxious") == 0 || strcmp(record->mood, "stressed") == 0 ||
-        strcmp(record->mood, "angry") == 0 || strcmp(record->mood, "low") == 0) {
-        score += 12;
+    if (containsIgnoreCase(record->tags, "warning") ||
+        containsIgnoreCase(record->tags, "health") ||
+        containsIgnoreCase(record->answerOne, "regret") ||
+        containsIgnoreCase(record->answerTwo, "mistake") ||
+        containsIgnoreCase(record->answerThree, "urgent") ||
+        containsIgnoreCase(record->diaryBody, "hurt")) {
+        return 1;
     }
 
-    if (score > 100) {
-        score = 100;
+    return 0;
+}
+
+int containsIgnoreCase(const char text[], const char keyword[]) {
+    int i;
+    int j;
+    int textLength = (int)strlen(text);
+    int keywordLength = (int)strlen(keyword);
+
+    if (keywordLength == 0 || keywordLength > textLength) {
+        return 0;
     }
 
-    return score;
+    for (i = 0; i <= textLength - keywordLength; i++) {
+        for (j = 0; j < keywordLength; j++) {
+            if (tolower((unsigned char)text[i + j]) != tolower((unsigned char)keyword[j])) {
+                break;
+            }
+        }
+
+        if (j == keywordLength) {
+            return 1;
+        }
+    }
+
+    return 0;
 }
 
 int isRecordLocked(const LifeRecord *record) {
@@ -575,7 +657,11 @@ int dateToNumber(const char date[]) {
     int day = 0;
     int month = 0;
     int year = 0;
-    sscanf(date, "%d-%d-%d", &day, &month, &year);
+
+    if (sscanf(date, "%d-%d-%d", &day, &month, &year) != 3) {
+        return 0;
+    }
+
     return year * 10000 + month * 100 + day;
 }
 
@@ -584,4 +670,11 @@ int todayToNumber(void) {
     struct tm *today = localtime(&currentTime);
 
     return (today->tm_year + 1900) * 10000 + (today->tm_mon + 1) * 100 + today->tm_mday;
+}
+
+void todayToDmy(char date[]) {
+    time_t currentTime = time(NULL);
+    struct tm *today = localtime(&currentTime);
+
+    sprintf(date, "%02d-%02d-%04d", today->tm_mday, today->tm_mon + 1, today->tm_year + 1900);
 }

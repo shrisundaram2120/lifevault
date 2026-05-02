@@ -12,11 +12,39 @@ const recordTypeLabels = {
 };
 
 const recordTypeHints = {
-  event: "Use this for decisions, mistakes, warnings, health notes, or important incidents.",
-  future: "Use this as a time capsule. Add an unlock date in DD-MM-YYYY format.",
-  dream: "Use this for dreams, symbols, moods, and repeated subconscious patterns.",
-  legacy: "Use this for important instructions, wishes, asset notes, or messages for trusted people.",
-  memory: "Use this for achievements, promises, lessons, gratitude, and goals.",
+  event: "A diary entry for something that happened, why it mattered, and what it taught you.",
+  future: "A time-locked note for your future self. Add an unlock date in DD-MM-YYYY format.",
+  dream: "A dream diary entry for scenes, emotions, symbols, and repeated patterns.",
+  legacy: "A private instruction, wish, or message you want trusted people to understand clearly.",
+  memory: "A preserved memory, goal, promise, or personal milestone you want to keep.",
+};
+
+const recordTypeQuestions = {
+  event: [
+    { key: "whatHappened", label: "What happened?", rows: 3 },
+    { key: "whyImportant", label: "Why did it matter?", rows: 3 },
+    { key: "lesson", label: "What did you learn or decide?", rows: 3 },
+  ],
+  future: [
+    { key: "futureMessage", label: "What should future you read?", rows: 4 },
+    { key: "reasonToLock", label: "Why should this open later?", rows: 3 },
+    { key: "futureReminder", label: "What reminder should it carry?", rows: 3 },
+  ],
+  dream: [
+    { key: "dreamScene", label: "What did you see in the dream?", rows: 4 },
+    { key: "dreamFeeling", label: "How did it feel after waking up?", rows: 3 },
+    { key: "dreamSymbols", label: "Which symbols or words repeated?", rows: 3 },
+  ],
+  legacy: [
+    { key: "recipient", label: "Who is this meant for?", rows: 2 },
+    { key: "instruction", label: "What message or instruction should remain?", rows: 4 },
+    { key: "importance", label: "Why is this important?", rows: 3 },
+  ],
+  memory: [
+    { key: "memory", label: "What memory or goal do you want to keep?", rows: 4 },
+    { key: "meaning", label: "What made it meaningful?", rows: 3 },
+    { key: "promise", label: "What next step or promise belongs with it?", rows: 3 },
+  ],
 };
 
 const emptyVault = {
@@ -63,6 +91,10 @@ const emergencyDialogContent = document.getElementById("emergencyDialogContent")
 const closeEmergencyDialog = document.getElementById("closeEmergencyDialog");
 const recordTypeInput = document.getElementById("recordTypeInput");
 const recordTypeHint = document.getElementById("recordTypeHint");
+const recordDateInput = document.getElementById("recordDateInput");
+const recordUnlockDateField = document.getElementById("recordUnlockDateField");
+const recordUnlockDateInput = document.getElementById("recordUnlockDateInput");
+const recordQuestions = document.getElementById("recordQuestions");
 
 const sections = {
   dashboard: document.getElementById("dashboardSection"),
@@ -74,7 +106,7 @@ const sections = {
 const sectionNames = {
   dashboard: "Overview",
   emergency: "Emergency",
-  recorder: "Life Recorder",
+  recorder: "Online Diary",
   insights: "Insights",
 };
 
@@ -175,10 +207,6 @@ function normalizeVault(saved) {
       mood: "Calm",
       tags: "future, message",
       unlockDate: normalizeDate(item.unlockDate),
-      outcome: "Pending",
-      stress: 5,
-      energy: 5,
-      decision: "",
       body: item.message,
       createdAt: normalizeDate(item.createdAt),
     })),
@@ -188,7 +216,6 @@ function normalizeVault(saved) {
       title: item.title,
       mood: item.mood,
       tags: item.keywords,
-      outcome: "Neutral",
       body: item.notes,
       createdAt: normalizeDate(item.createdAt),
     })),
@@ -198,8 +225,6 @@ function normalizeVault(saved) {
       title: item.title,
       mood: "Calm",
       tags: item.category,
-      outcome: "Pending",
-      decision: item.category,
       body: item.message,
       createdAt: normalizeDate(item.createdAt),
     })),
@@ -209,10 +234,6 @@ function normalizeVault(saved) {
       title: item.title,
       mood: "Happy",
       tags: item.category,
-      outcome: "Good",
-      stress: 3,
-      energy: 7,
-      decision: item.category,
       body: item.message,
       createdAt: normalizeDate(item.createdAt),
     })),
@@ -222,9 +243,6 @@ function normalizeVault(saved) {
       title: item.title,
       mood: item.mood,
       tags: "black box, life event",
-      outcome: item.outcome,
-      stress: item.stress,
-      energy: item.energy,
       decision: item.decision,
       body: item.notes,
       createdAt: normalizeDate(item.createdAt),
@@ -235,20 +253,55 @@ function normalizeVault(saved) {
 }
 
 function normalizeRecord(record) {
+  const type = recordTypeLabels[record.type] ? record.type : "event";
+
   return {
     id: record.id || crypto.randomUUID(),
-    type: record.type || "event",
-    title: record.title || "Untitled Record",
+    type,
+    title: record.title || "Untitled Diary Entry",
+    entryDate: normalizeDate(record.entryDate || record.createdAt || todayDmy()),
     mood: record.mood || "Calm",
     tags: record.tags || "",
     unlockDate: normalizeDate(record.unlockDate || ""),
-    outcome: record.outcome || "Pending",
-    stress: record.stress || 5,
-    energy: record.energy || 5,
-    decision: record.decision || "",
-    body: record.body || record.message || record.notes || "",
-    createdAt: normalizeDate(record.createdAt || todayDmy()),
+    answers: normalizeAnswers(record, type),
+    body: record.diaryBody || record.body || record.message || record.notes || "",
+    createdAt: normalizeDate(record.createdAt || record.entryDate || todayDmy()),
   };
+}
+
+function normalizeAnswers(record, type) {
+  const incoming = record.answers && typeof record.answers === "object" ? record.answers : {};
+  const fallback = getLegacyAnswerFallbacks(record, type);
+  const answers = {};
+
+  recordTypeQuestions[type].forEach((question, index) => {
+    answers[question.key] = incoming[question.key] || fallback[index] || "";
+  });
+
+  return answers;
+}
+
+function getLegacyAnswerFallbacks(record, type) {
+  const oldBody = record.body || record.message || record.notes || "";
+  const oldDecision = record.decision || "";
+
+  if (type === "future") {
+    return [oldBody, oldDecision, ""];
+  }
+
+  if (type === "dream") {
+    return [oldBody, record.mood || "", record.tags || ""];
+  }
+
+  if (type === "legacy") {
+    return [oldDecision, oldBody, ""];
+  }
+
+  if (type === "memory") {
+    return [oldBody, oldDecision, ""];
+  }
+
+  return [oldBody, oldDecision, ""];
 }
 
 function getActiveAccount() {
@@ -392,60 +445,61 @@ function getMoodStats() {
   return [...counts.entries()].sort((a, b) => b[1] - a[1]);
 }
 
-function calculateRisk(record) {
-  let score = 0;
-  const stress = Number(record.stress || 5);
-  const energy = Number(record.energy || 5);
+function getTypeStats() {
+  const counts = new Map();
 
-  score += stress * 7;
-  score += (10 - energy) * 4;
+  vault.records.forEach((record) => {
+    const label = recordTypeLabels[record.type] || "Life Event";
+    counts.set(label, (counts.get(label) || 0) + 1);
+  });
 
-  if (record.outcome === "Bad") {
-    score += 20;
-  } else if (record.outcome === "Neutral" || record.outcome === "Pending") {
-    score += 8;
-  }
-
-  if (["Anxious", "Stressed", "Angry", "Low"].includes(record.mood)) {
-    score += 12;
-  }
-
-  if (record.type === "dream" && ["Anxious", "Confused", "Low"].includes(record.mood)) {
-    score += 6;
-  }
-
-  return Math.min(100, score);
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]);
 }
 
-function getRiskLabel(score) {
-  if (score >= 80) {
-    return "Critical";
-  }
-
-  if (score >= 60) {
-    return "High";
-  }
-
-  if (score >= 35) {
-    return "Moderate";
-  }
-
-  return "Low";
+function getRecordText(record) {
+  return [
+    record.title,
+    record.mood,
+    record.tags,
+    record.body,
+    ...Object.values(record.answers || {}),
+  ].join(" ").toLowerCase();
 }
 
-function getSignalStats() {
+function needsReflection(record) {
+  const text = getRecordText(record);
+  const reflectionWords = [
+    "anxious",
+    "stressed",
+    "angry",
+    "low",
+    "confused",
+    "fear",
+    "hurt",
+    "lost",
+    "warning",
+    "urgent",
+    "health",
+    "doctor",
+    "mistake",
+    "regret",
+  ];
+
+  return reflectionWords.some((word) => text.includes(word));
+}
+
+function getDiaryStats() {
   const records = vault.records;
-  const highRiskRecords = records.filter((record) => calculateRisk(record) >= 70);
   const lockedRecords = records.filter(isLocked);
-  const averageStress = records.length
-    ? Math.round(records.reduce((total, record) => total + Number(record.stress || 5), 0) / records.length)
-    : 0;
-  const averageEnergy = records.length
-    ? Math.round(records.reduce((total, record) => total + Number(record.energy || 5), 0) / records.length)
-    : 0;
-  const badOutcomes = records.filter((record) => record.outcome === "Bad").length;
+  const reflectionRecords = records.filter((record) => !isLocked(record) && needsReflection(record));
 
-  return { highRiskRecords, lockedRecords, averageStress, averageEnergy, badOutcomes };
+  return {
+    lockedRecords,
+    reflectionRecords,
+    tagStats: getTagStats(),
+    moodStats: getMoodStats(),
+    typeStats: getTypeStats(),
+  };
 }
 
 function renderEmergencyCard(target) {
@@ -512,21 +566,22 @@ function openVaultFor(email) {
 }
 
 function renderDashboard() {
-  const tagStats = getTagStats();
-  const signalStats = getSignalStats();
+  const diaryStats = getDiaryStats();
+  const tagStats = diaryStats.tagStats;
+  const moodStats = diaryStats.moodStats;
 
   document.getElementById("emergencyStatus").textContent = isEmergencyComplete() ? "Ready" : "Incomplete";
-  document.getElementById("lockedCapsuleCount").textContent = signalStats.lockedRecords.length;
+  document.getElementById("lockedCapsuleCount").textContent = diaryStats.lockedRecords.length;
   document.getElementById("keywordCount").textContent = tagStats.length;
   document.getElementById("totalRecordCount").textContent = vault.records.length;
 
   const snapshotItems = [
     {
       title: "Emergency Access",
-      detail: isEmergencyComplete() ? "Emergency card is ready without unlocking the vault." : "Add name and contact number.",
+      detail: isEmergencyComplete() ? "Emergency card is ready without opening the private diary." : "Add name and contact number.",
     },
     {
-      title: "Next Locked Record",
+      title: "Next Locked Entry",
       detail: getNextLockedRecordText(),
     },
     {
@@ -534,10 +589,8 @@ function renderDashboard() {
       detail: tagStats[0] ? `${tagStats[0][0]} appeared ${tagStats[0][1]} time(s).` : "No tags recorded yet.",
     },
     {
-      title: "Risk Signals",
-      detail: signalStats.highRiskRecords.length
-        ? `${signalStats.highRiskRecords.length} high-risk life signal(s) detected.`
-        : "No high-risk life signal detected.",
+      title: "Mood Pattern",
+      detail: moodStats[0] ? `${moodStats[0][0]} is the most repeated feeling.` : "No mood pattern yet.",
     },
   ];
 
@@ -545,12 +598,12 @@ function renderDashboard() {
 
   const recentEntries = vault.records.slice(0, 5).map((record) => ({
     title: record.title,
-    detail: `${recordTypeLabels[record.type]} | ${getRiskLabel(calculateRisk(record))} risk`,
+    detail: `${recordTypeLabels[record.type]} | ${formatDate(record.entryDate)} | Mood: ${record.mood}`,
   }));
 
   document.getElementById("recentEntries").innerHTML = recentEntries.length
     ? recentEntries.map(renderSummaryItem).join("")
-    : renderSummaryItem({ title: "No life records yet", detail: "Add one record and LifeVault starts learning patterns." });
+    : renderSummaryItem({ title: "No diary entries yet", detail: "Write the first entry and LifeVault starts building your personal timeline." });
 }
 
 function getNextLockedRecordText() {
@@ -560,7 +613,7 @@ function getNextLockedRecordText() {
     .sort((a, b) => a.remaining - b.remaining)[0];
 
   if (!nextRecord) {
-    return "No locked future records waiting.";
+    return "No locked future entry waiting.";
   }
 
   return `${nextRecord.title} opens in ${nextRecord.remaining} day(s).`;
@@ -589,45 +642,79 @@ function renderEmergencyModule() {
 function renderTimeline() {
   document.getElementById("recordTimeline").innerHTML = vault.records.length
     ? vault.records.map(renderRecordCard).join("")
-    : renderEmptyRecord("No life records saved.");
+    : renderEmptyRecord("No diary entries saved.");
 }
 
 function renderRecordCard(record) {
-  const riskScore = calculateRisk(record);
   const locked = isLocked(record);
-  const body = locked ? "This future record is locked until its unlock date." : escapeHtml(record.body);
+  const answerItems = getRecordAnswerItems(record);
+  const tagText = record.tags || "No tags";
+  const body = record.body || "No extra diary note.";
 
   return `
-    <article class="record-card">
+    <article class="record-card ${locked ? "locked-record" : ""}">
       <div class="record-head">
         <div>
           <h3>${escapeHtml(record.title)}</h3>
           <div class="record-meta">
-            ${recordTypeLabels[record.type]} | ${formatDate(record.createdAt)} | Mood: ${escapeHtml(record.mood)}
+            ${recordTypeLabels[record.type]} | ${formatDate(record.entryDate)} | Mood: ${escapeHtml(record.mood)}
           </div>
         </div>
-        <span class="pill ${riskScore < 60 ? "open" : ""}">${locked ? `${daysUntil(record.unlockDate)} day(s) left` : `${getRiskLabel(riskScore)} ${riskScore}%`}</span>
+        <span class="pill ${locked ? "" : "open"}">${locked ? `${daysUntil(record.unlockDate)} day(s) left` : "Diary saved"}</span>
       </div>
-      <p class="record-body">Decision: ${escapeHtml(record.decision || "Not recorded")}\nOutcome: ${escapeHtml(record.outcome)}\nTags: ${escapeHtml(record.tags || "No tags")}\n${body}</p>
+      <div class="record-tags">${escapeHtml(tagText)}</div>
+      ${
+        locked
+          ? `<p class="record-body">This future diary entry is locked until ${escapeHtml(record.unlockDate)}.</p>`
+          : `
+            <div class="record-answers">
+              ${answerItems.map(renderRecordAnswer).join("")}
+            </div>
+            <p class="record-body">${escapeHtml(body)}</p>
+          `
+      }
     </article>
   `;
 }
 
+function getRecordAnswerItems(record) {
+  const questions = recordTypeQuestions[record.type] || recordTypeQuestions.event;
+  const answers = record.answers || {};
+
+  return questions
+    .map((question) => ({
+      label: question.label,
+      value: answers[question.key] || "",
+    }))
+    .filter((item) => item.value);
+}
+
+function renderRecordAnswer(item) {
+  return `
+    <div class="record-answer">
+      <strong>${escapeHtml(item.label)}</strong>
+      <span>${escapeHtml(item.value)}</span>
+    </div>
+  `;
+}
+
 function renderInsights() {
-  const signalStats = getSignalStats();
-  const moodStats = getMoodStats().slice(0, 5);
-  const tagStats = getTagStats().slice(0, 8);
+  const diaryStats = getDiaryStats();
+  const moodStats = diaryStats.moodStats.slice(0, 5);
+  const tagStats = diaryStats.tagStats.slice(0, 8);
+  const typeStats = diaryStats.typeStats.slice(0, 5);
   const signalItems = [
-    { label: "High-Risk Records", value: `${signalStats.highRiskRecords.length} record(s)` },
-    { label: "Average Stress", value: vault.records.length ? `${signalStats.averageStress}/10` : "No records yet" },
-    { label: "Average Energy", value: vault.records.length ? `${signalStats.averageEnergy}/10` : "No records yet" },
-    { label: "Bad Outcomes", value: `${signalStats.badOutcomes} outcome(s)` },
-    { label: "Locked Future Records", value: `${signalStats.lockedRecords.length} record(s)` },
+    { label: "Diary Entries", value: `${vault.records.length} record(s)` },
+    { label: "Locked Future Entries", value: `${diaryStats.lockedRecords.length} record(s)` },
+    { label: "Reflection Prompts", value: `${diaryStats.reflectionRecords.length} record(s)` },
+    { label: "Mood Patterns", value: moodStats.length ? `${moodStats.length} mood type(s)` : "No records yet" },
+    { label: "Tags Captured", value: `${diaryStats.tagStats.length} unique tag(s)` },
   ];
 
   document.getElementById("insightSignals").innerHTML = signalItems.map(renderPatternItem).join("");
 
   const patternItems = [
+    ...typeStats.map(([label, count]) => ({ label, value: `${count} diary entry(s)` })),
     ...tagStats.map(([label, count]) => ({ label, value: `${count} tag hit(s)` })),
     ...moodStats.map(([label, count]) => ({ label, value: `${count} mood record(s)` })),
   ];
@@ -636,9 +723,9 @@ function renderInsights() {
     ? patternItems.map(renderPatternItem).join("")
     : renderEmptyRecord("No patterns yet.");
 
-  document.getElementById("highRiskList").innerHTML = signalStats.highRiskRecords.length
-    ? signalStats.highRiskRecords.map(renderRecordCard).join("")
-    : renderEmptyRecord("No records currently need attention.");
+  document.getElementById("reflectionList").innerHTML = diaryStats.reflectionRecords.length
+    ? diaryStats.reflectionRecords.map(renderRecordCard).join("")
+    : renderEmptyRecord("No diary entries currently need a revisit.");
 }
 
 function renderPatternItem(item) {
@@ -654,8 +741,25 @@ function renderEmptyRecord(message) {
   return `<div class="summary-item"><strong>${escapeHtml(message)}</strong><span>Ready when you are.</span></div>`;
 }
 
-function updateTypeHint() {
-  recordTypeHint.textContent = recordTypeHints[recordTypeInput.value];
+function renderTypeQuestions() {
+  const type = recordTypeInput.value;
+  const questions = recordTypeQuestions[type] || recordTypeQuestions.event;
+
+  recordTypeHint.textContent = recordTypeHints[type];
+  recordUnlockDateField.classList.toggle("hidden", type !== "future");
+
+  if (type !== "future") {
+    recordUnlockDateInput.value = "";
+  }
+
+  recordQuestions.innerHTML = questions
+    .map((question) => `
+      <label class="span-two diary-question">
+        <span>${escapeHtml(question.label)}</span>
+        <textarea data-question-key="${question.key}" rows="${question.rows}" required></textarea>
+      </label>
+    `)
+    .join("");
 }
 
 function showSection(section) {
@@ -678,7 +782,13 @@ function render() {
   renderEmergencyModule();
   renderTimeline();
   renderInsights();
-  updateTypeHint();
+  renderTypeQuestions();
+}
+
+function resetRecordForm(form) {
+  form.reset();
+  recordDateInput.value = todayDmy();
+  renderTypeQuestions();
 }
 
 unlockForm.addEventListener("submit", (event) => {
@@ -754,7 +864,7 @@ switchAuthBtn.addEventListener("click", () => {
 });
 
 secretTypeInput.addEventListener("change", configureAuthPanel);
-recordTypeInput.addEventListener("change", updateTypeHint);
+recordTypeInput.addEventListener("change", renderTypeQuestions);
 
 document.getElementById("emergencyProfileForm").addEventListener("submit", (event) => {
   event.preventDefault();
@@ -773,30 +883,38 @@ document.getElementById("emergencyProfileForm").addEventListener("submit", (even
 
 document.getElementById("recordForm").addEventListener("submit", (event) => {
   event.preventDefault();
-  const unlockDate = document.getElementById("recordUnlockDateInput").value.trim();
+  const entryDate = document.getElementById("recordDateInput").value.trim();
+  const unlockDate = recordTypeInput.value === "future" ? recordUnlockDateInput.value.trim() : "";
 
-  if (!isValidDmy(unlockDate)) {
-    alert("Enter unlock date in DD-MM-YYYY format.");
+  if (!entryDate || !isValidDmy(entryDate)) {
+    alert("Enter entry date in DD-MM-YYYY format.");
     return;
   }
+
+  if (recordTypeInput.value === "future" && (!unlockDate || !isValidDmy(unlockDate))) {
+    alert("Future messages need an unlock date in DD-MM-YYYY format.");
+    return;
+  }
+
+  const answers = {};
+  document.querySelectorAll("#recordQuestions [data-question-key]").forEach((input) => {
+    answers[input.dataset.questionKey] = input.value.trim();
+  });
 
   addLifeRecord({
     title: document.getElementById("recordTitleInput").value.trim(),
     type: recordTypeInput.value,
+    entryDate,
     mood: document.getElementById("recordMoodInput").value,
     tags: document.getElementById("recordTagsInput").value.trim(),
     unlockDate,
-    outcome: document.getElementById("recordOutcomeInput").value,
-    stress: document.getElementById("recordStressInput").value,
-    energy: document.getElementById("recordEnergyInput").value,
-    decision: document.getElementById("recordDecisionInput").value.trim(),
+    answers,
     body: document.getElementById("recordBodyInput").value.trim(),
   });
-  event.target.reset();
-  document.getElementById("recordStressInput").value = 5;
-  document.getElementById("recordEnergyInput").value = 5;
-  updateTypeHint();
+
+  resetRecordForm(event.target);
 });
 
+recordDateInput.value = todayDmy();
 configureAuthPanel();
 render();

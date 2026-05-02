@@ -10,7 +10,7 @@
   <main class="app">
     <section id="lockScreen" class="lock-screen">
       <div class="brand-block">
-        <p class="eyebrow">Personal Safety Vault</p>
+        <p class="eyebrow">Personal Safety and Diary Vault</p>
         <h1>LifeVault</h1>
       </div>
 
@@ -62,7 +62,7 @@
         <nav class="nav-tabs" aria-label="Vault sections">
           <button class="nav-button active" type="button" data-section="dashboard">Overview</button>
           <button class="nav-button" type="button" data-section="emergency">Emergency</button>
-          <button class="nav-button" type="button" data-section="recorder">Life Recorder</button>
+          <button class="nav-button" type="button" data-section="recorder">Online Diary</button>
           <button class="nav-button" type="button" data-section="insights">Insights</button>
         </nav>
         <button id="lockBtn" class="quiet" type="button">Lock Vault</button>
@@ -71,7 +71,7 @@
       <section class="content">
         <header class="content-header">
           <div>
-            <p class="eyebrow">Personal Safety and Life Pattern System</p>
+            <p class="eyebrow">Personal Safety and Private Diary System</p>
             <h2 id="sectionTitle">Overview</h2>
           </div>
           <div class="status-strip">
@@ -94,15 +94,15 @@
             <strong id="keywordCount">0</strong>
           </article>
           <article class="metric-panel accent-blue">
-            <span>Total Life Records</span>
+            <span>Total Diary Entries</span>
             <strong id="totalRecordCount">0</strong>
           </article>
           <article class="wide-panel">
-            <h3>Life Signal Snapshot</h3>
+            <h3>Diary Snapshot</h3>
             <div id="prioritySnapshot" class="summary-list"></div>
           </article>
           <article class="wide-panel">
-            <h3>Recent Life Records</h3>
+            <h3>Recent Diary Entries</h3>
             <div id="recentEntries" class="summary-list"></div>
           </article>
         </section>
@@ -147,13 +147,17 @@
 
         <section id="recorderSection" class="module hidden">
           <div class="timeline-layout">
-            <form id="recordForm" class="form-grid compact-form record-form-panel">
+            <form id="recordForm" class="form-grid compact-form record-form-panel diary-form">
+              <div class="span-two diary-heading">
+                <p class="eyebrow">Online Diary</p>
+                <h3>New Life Entry</h3>
+              </div>
               <label>
-                <span>Record Title</span>
+                <span>Entry Title</span>
                 <input id="recordTitleInput" type="text" maxlength="80" required>
               </label>
               <label>
-                <span>Life Record Type</span>
+                <span>Diary Type</span>
                 <select id="recordTypeInput">
                   <option value="event">Life Event</option>
                   <option value="future">Future Message</option>
@@ -163,57 +167,41 @@
                 </select>
               </label>
               <label>
-                <span>Mood</span>
+                <span>Feeling / Mood</span>
                 <select id="recordMoodInput">
                   <option>Calm</option>
                   <option>Focused</option>
                   <option>Happy</option>
                   <option>Curious</option>
                   <option>Anxious</option>
-                  <option>Stressed</option>
+                  <option>Overwhelmed</option>
                   <option>Angry</option>
                   <option>Low</option>
                 </select>
               </label>
               <label>
-                <span>Tags / Keywords</span>
-                <input id="recordTagsInput" type="text" maxlength="140" placeholder="exam, family, health">
+                <span>Entry Date</span>
+                <input id="recordDateInput" type="text" maxlength="10" placeholder="DD-MM-YYYY" required>
               </label>
-              <label>
+              <label class="span-two">
+                <span>Tags / Keywords</span>
+                <input id="recordTagsInput" type="text" maxlength="140" placeholder="exam, family, health, dream symbol">
+              </label>
+              <label id="recordUnlockDateField" class="span-two hidden">
                 <span>Unlock Date</span>
                 <input id="recordUnlockDateInput" type="text" maxlength="10" placeholder="DD-MM-YYYY">
               </label>
-              <label>
-                <span>Outcome</span>
-                <select id="recordOutcomeInput">
-                  <option>Good</option>
-                  <option>Neutral</option>
-                  <option>Bad</option>
-                  <option>Pending</option>
-                </select>
-              </label>
-              <label>
-                <span>Stress Level</span>
-                <input id="recordStressInput" type="number" min="1" max="10" value="5" required>
-              </label>
-              <label>
-                <span>Energy Level</span>
-                <input id="recordEnergyInput" type="number" min="1" max="10" value="5" required>
-              </label>
+              <div id="recordQuestions" class="type-question-grid span-two"></div>
               <label class="span-two">
-                <span>Decision, Promise, or Main Thought</span>
-                <input id="recordDecisionInput" type="text" maxlength="140">
-              </label>
-              <label class="span-two">
-                <span>Life Record</span>
-                <textarea id="recordBodyInput" rows="5" required></textarea>
+                <span>Extra Diary Note</span>
+                <textarea id="recordBodyInput" rows="6" placeholder="Write anything else exactly like a personal diary page."></textarea>
               </label>
               <p id="recordTypeHint" class="form-note span-two"></p>
-              <button class="primary" type="submit">Save Life Record</button>
+              <button class="primary" type="submit">Save Diary Entry</button>
             </form>
 
             <article class="timeline-panel">
-              <h3>Life Timeline</h3>
+              <h3>Diary Timeline</h3>
               <div id="recordTimeline" class="record-list"></div>
             </article>
           </div>
@@ -222,7 +210,7 @@
         <section id="insightsSection" class="module hidden">
           <div class="section-grid insight-grid">
             <article class="wide-panel insight-panel">
-              <h3>Signal Analyzer</h3>
+              <h3>Diary Analyzer</h3>
               <div id="insightSignals" class="pattern-grid"></div>
             </article>
             <article class="wide-panel insight-panel">
@@ -230,8 +218,8 @@
               <div id="patternInsights" class="pattern-grid"></div>
             </article>
             <article class="wide-panel insight-panel span-two">
-              <h3>Records Needing Attention</h3>
-              <div id="highRiskList" class="record-list"></div>
+              <h3>Entries To Revisit</h3>
+              <div id="reflectionList" class="record-list"></div>
             </article>
           </div>
         </section>

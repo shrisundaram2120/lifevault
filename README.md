@@ -8,15 +8,16 @@ It includes:
 - A join/login portal that remembers the user by Gmail
 - Passcode or password preference for each vault user
 - C login details stored in `vault_passcode.txt`
-- One unified Life Record flow for future messages, dream signals, legacy instructions, memories, goals, and life events
+- Online diary-style Life Records for future messages, dream signals, legacy instructions, memories, goals, and life events
+- Type-specific diary questions so each record asks only what matches its purpose
 - Date-locked future records using `DD-MM-YYYY`
-- Mood, stress, energy, outcome, tag, and decision tracking
-- Life Signal Analyzer for risk patterns and repeated themes
+- Mood, tag, date, diary note, and personal reflection tracking
+- Diary Pattern Analyzer for repeated themes and entries worth revisiting
 - A C CLI assignment version using structures, pointers, and file handling
 
 ## Website Demo
 
-Default vault passcode: `1234`
+Existing old vaults may still use default passcode `1234`. New users create their own passcode or password.
 
 Emergency card: quick access without the vault passcode
 

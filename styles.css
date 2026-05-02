@@ -1,10 +1,11 @@
 :root {
-  --bg: #f5f6f2;
+  --bg: #f3f6f8;
   --ink: #20242a;
   --muted: #68717c;
   --surface: #ffffff;
-  --surface-2: #eef2ee;
-  --line: #d9ded6;
+  --surface-2: #eef3f4;
+  --paper: #fffdf8;
+  --line: #d6dde2;
   --teal: #0f766e;
   --teal-dark: #115e59;
   --red: #b42318;
@@ -12,6 +13,7 @@
   --green: #15803d;
   --blue: #2563eb;
   --shadow: 0 18px 48px rgba(25, 32, 39, 0.12);
+  --radius: 8px;
 }
 
 * {
@@ -23,7 +25,7 @@ body {
   min-height: 100vh;
   background: var(--bg);
   color: var(--ink);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Segoe UI", Arial, Helvetica, sans-serif;
 }
 
 button,
@@ -36,9 +38,15 @@ select {
 button {
   min-height: 42px;
   border: 1px solid transparent;
+  border-radius: 7px;
   padding: 0 16px;
   font-weight: 700;
   cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
 }
 
 button:disabled {
@@ -51,6 +59,7 @@ textarea,
 select {
   width: 100%;
   border: 1px solid var(--line);
+  border-radius: 7px;
   background: #fff;
   color: var(--ink);
   padding: 11px 12px;
@@ -96,11 +105,15 @@ select:focus {
 .record-card {
   background: var(--surface);
   border: 1px solid var(--line);
+  border-radius: var(--radius);
   box-shadow: var(--shadow);
 }
 
 .brand-block {
   grid-row: span 2;
+  background:
+    linear-gradient(145deg, rgba(15, 118, 110, 0.12), rgba(180, 83, 9, 0.09)),
+    var(--surface);
   padding: clamp(26px, 5vw, 56px);
   display: flex;
   flex-direction: column;
@@ -179,6 +192,7 @@ h3 {
   padding: 12px;
   background: var(--surface-2);
   border: 1px solid var(--line);
+  border-radius: var(--radius);
 }
 
 .account-box strong {
@@ -278,6 +292,7 @@ h3 {
   padding: 9px 10px;
   background: var(--surface-2);
   border: 1px solid var(--line);
+  border-radius: 999px;
   color: var(--muted);
   font-weight: 700;
   font-size: 0.9rem;
@@ -300,6 +315,7 @@ h3 {
   display: grid;
   align-content: space-between;
   box-shadow: none;
+  overflow: hidden;
 }
 
 .metric-panel span {
@@ -347,7 +363,47 @@ h3 {
 .insight-panel {
   background: var(--surface);
   border: 1px solid var(--line);
+  border-radius: var(--radius);
   padding: 18px;
+}
+
+.record-form-panel {
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0) 0,
+      rgba(255, 255, 255, 0) 34px,
+      rgba(37, 99, 235, 0.08) 35px
+    ),
+    var(--paper);
+}
+
+.diary-form {
+  position: relative;
+  overflow: hidden;
+}
+
+.diary-form::before {
+  content: "";
+  position: absolute;
+  top: 18px;
+  bottom: 18px;
+  left: 16px;
+  width: 2px;
+  background: rgba(180, 35, 24, 0.22);
+}
+
+.diary-form > * {
+  position: relative;
+}
+
+.diary-heading {
+  padding-left: 10px;
+}
+
+.diary-heading h3 {
+  margin-bottom: 0;
+  font-size: 1.35rem;
 }
 
 .form-note {
@@ -355,8 +411,19 @@ h3 {
   padding: 12px;
   background: #f8fafc;
   border: 1px solid var(--line);
+  border-radius: var(--radius);
   color: var(--muted);
   line-height: 1.45;
+}
+
+.type-question-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.diary-question textarea {
+  min-height: 96px;
+  background: rgba(255, 255, 255, 0.88);
 }
 
 .insight-grid {
@@ -376,6 +443,7 @@ h3 {
   padding: 12px;
   background: var(--surface-2);
   border: 1px solid var(--line);
+  border-radius: var(--radius);
 }
 
 .summary-item strong,
@@ -428,6 +496,7 @@ h3 {
   padding: 12px;
   background: var(--surface-2);
   border: 1px solid var(--line);
+  border-radius: var(--radius);
 }
 
 .emergency-field span {
@@ -446,6 +515,7 @@ h3 {
 .record-card {
   padding: 16px;
   box-shadow: none;
+  background: var(--surface);
 }
 
 .record-head {
@@ -468,9 +538,55 @@ h3 {
   overflow-wrap: anywhere;
 }
 
+.record-tags {
+  display: inline-block;
+  max-width: 100%;
+  margin-bottom: 10px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.82rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.record-answers {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.record-answer {
+  padding: 10px;
+  border-left: 3px solid var(--teal);
+  background: #f8fafc;
+  border-radius: 0 7px 7px 0;
+}
+
+.record-answer strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--teal-dark);
+  font-size: 0.86rem;
+}
+
+.record-answer span {
+  display: block;
+  color: var(--ink);
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.locked-record {
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
 .pill {
   align-self: start;
   padding: 6px 8px;
+  border-radius: 999px;
   background: #fff7ed;
   border: 1px solid #fed7aa;
   color: #9a3412;

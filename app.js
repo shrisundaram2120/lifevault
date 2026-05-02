@@ -141,6 +141,7 @@ const authSubmitBtn = document.getElementById("authSubmitBtn");
 const switchAuthBtn = document.getElementById("switchAuthBtn");
 const authMessage = document.getElementById("authMessage");
 const lockBtn = document.getElementById("lockBtn");
+const menuToggleBtn = document.getElementById("menuToggleBtn");
 const sectionTitle = document.getElementById("sectionTitle");
 const todayText = document.getElementById("todayText");
 const recordCountText = document.getElementById("recordCountText");
@@ -669,7 +670,19 @@ function openVaultFor(email) {
   authMessage.textContent = "";
   lockScreen.classList.add("hidden");
   vaultScreen.classList.remove("hidden");
+  setSidebarOpen(false);
   showSection("dashboard");
+}
+
+function setSidebarOpen(isOpen) {
+  vaultScreen.classList.toggle("sidebar-collapsed", !isOpen);
+  vaultScreen.classList.toggle("sidebar-open", isOpen);
+  menuToggleBtn.setAttribute("aria-expanded", String(isOpen));
+  menuToggleBtn.setAttribute("aria-label", isOpen ? "Close menu" : "Open menu");
+}
+
+function toggleSidebar() {
+  setSidebarOpen(vaultScreen.classList.contains("sidebar-collapsed"));
 }
 
 function showSection(section) {
@@ -1388,6 +1401,8 @@ emergencyAccessBtn.addEventListener("click", () => {
 
 closeEmergencyDialog.addEventListener("click", () => emergencyDialog.close());
 
+menuToggleBtn.addEventListener("click", toggleSidebar);
+
 lockBtn.addEventListener("click", () => {
   savePortal();
   vaultScreen.classList.add("hidden");
@@ -1397,7 +1412,12 @@ lockBtn.addEventListener("click", () => {
 });
 
 document.querySelectorAll(".nav-button").forEach((button) => {
-  button.addEventListener("click", () => showSection(button.dataset.section));
+  button.addEventListener("click", () => {
+    showSection(button.dataset.section);
+    if (window.innerWidth <= 980) {
+      setSidebarOpen(false);
+    }
+  });
 });
 
 document.addEventListener("click", (event) => {

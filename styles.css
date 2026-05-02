@@ -252,17 +252,36 @@ h3 {
   min-height: 100vh;
   display: grid;
   grid-template-columns: 276px minmax(0, 1fr);
+  overflow-x: hidden;
+  transition: grid-template-columns 220ms ease;
+}
+
+.vault-screen.sidebar-collapsed {
+  grid-template-columns: 0 minmax(0, 1fr);
 }
 
 .sidebar {
-  min-height: 100vh;
+  width: 276px;
+  height: 100vh;
   padding: 22px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  overflow-y: auto;
   border-width: 0 1px 0 0;
   border-radius: 0;
   box-shadow: none;
+  transform: translateX(0);
+  transition: transform 220ms ease, opacity 180ms ease;
+}
+
+.vault-screen.sidebar-collapsed .sidebar {
+  transform: translateX(-105%);
+  opacity: 0;
+  pointer-events: none;
 }
 
 .sidebar h1 {
@@ -305,6 +324,50 @@ h3 {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--surface);
+}
+
+.header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.menu-toggle {
+  width: 46px;
+  min-width: 46px;
+  height: 46px;
+  padding: 0;
+  display: grid;
+  place-content: center;
+  gap: 5px;
+  background: var(--surface-2);
+  border-color: var(--line);
+}
+
+.menu-toggle span {
+  display: block;
+  width: 19px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--ink);
+  transition: transform 180ms ease, opacity 180ms ease;
+}
+
+.vault-screen.sidebar-open .menu-toggle span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.vault-screen.sidebar-open .menu-toggle span:nth-child(2) {
+  opacity: 0;
+}
+
+.vault-screen.sidebar-open .menu-toggle span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
 }
 
 .status-strip {
@@ -880,9 +943,26 @@ h3 {
     grid-template-columns: 1fr;
   }
 
+  .vault-screen.sidebar-open,
+  .vault-screen.sidebar-collapsed {
+    grid-template-columns: 1fr;
+  }
+
   .sidebar {
-    min-height: auto;
-    border-width: 0 0 1px;
+    width: min(300px, 82vw);
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    border-width: 0 1px 0 0;
+    transform: translateX(-105%);
+    box-shadow: var(--shadow);
+  }
+
+  .vault-screen.sidebar-open .sidebar {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .nav-tabs {

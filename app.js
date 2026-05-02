@@ -1,6 +1,7 @@
-const STORAGE_KEY = "lifevault-data-v2";
-const LEGACY_STORAGE_KEY = "lifevault-data-v1";
+const USERS_STORAGE_KEY = "lifevault-users-v1";
+const LEGACY_STORAGE_KEYS = ["lifevault-data-v2", "lifevault-data-v1"];
 const DEFAULT_PASSCODE = "1234";
+const DEFAULT_GMAIL = "user@gmail.com";
 
 const recordTypeLabels = {
   event: "Life Event",
@@ -12,14 +13,13 @@ const recordTypeLabels = {
 
 const recordTypeHints = {
   event: "Use this for decisions, mistakes, warnings, health notes, or important incidents.",
-  future: "Use this as a time capsule. Add an unlock date to keep the message hidden until then.",
+  future: "Use this as a time capsule. Add an unlock date in DD-MM-YYYY format.",
   dream: "Use this for dreams, symbols, moods, and repeated subconscious patterns.",
   legacy: "Use this for important instructions, wishes, asset notes, or messages for trusted people.",
   memory: "Use this for achievements, promises, lessons, gratitude, and goals.",
 };
 
 const emptyVault = {
-  passcode: DEFAULT_PASSCODE,
   emergency: {
     fullName: "",
     bloodGroup: "",
@@ -32,15 +32,28 @@ const emptyVault = {
   records: [],
 };
 
-let vault = loadVault();
+let portal = loadPortal();
+let activeEmail = portal.lastEmail || "";
+let vault = getActiveAccount()?.vault || structuredClone(emptyVault);
+let authMode = getActiveAccount() ? "login" : "join";
 let activeSection = "dashboard";
 
 const lockScreen = document.getElementById("lockScreen");
 const vaultScreen = document.getElementById("vaultScreen");
 const unlockForm = document.getElementById("unlockForm");
 const emergencyAccessBtn = document.getElementById("emergencyAccessBtn");
-const authMessage = document.getElementById("authMessage");
+const authModeLabel = document.getElementById("authModeLabel");
+const authTitle = document.getElementById("authTitle");
+const rememberedUserBox = document.getElementById("rememberedUserBox");
+const joinFields = document.getElementById("joinFields");
+const nameInput = document.getElementById("nameInput");
+const gmailInput = document.getElementById("gmailInput");
+const secretTypeInput = document.getElementById("secretTypeInput");
+const secretLabel = document.getElementById("secretLabel");
 const passcodeInput = document.getElementById("passcodeInput");
+const authSubmitBtn = document.getElementById("authSubmitBtn");
+const switchAuthBtn = document.getElementById("switchAuthBtn");
+const authMessage = document.getElementById("authMessage");
 const lockBtn = document.getElementById("lockBtn");
 const sectionTitle = document.getElementById("sectionTitle");
 const todayText = document.getElementById("todayText");
@@ -65,23 +78,88 @@ const sectionNames = {
   insights: "Insights",
 };
 
-function loadVault() {
-  const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
+function loadPortal() {
+  const saved = localStorage.getItem(USERS_STORAGE_KEY);
 
-  if (!saved) {
-    return structuredClone(emptyVault);
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      return normalizePortal(parsed);
+    } catch {
+      return createEmptyPortal();
+    }
   }
 
-  try {
-    return normalizeVault(JSON.parse(saved));
-  } catch {
-    return structuredClone(emptyVault);
+  const legacyVault = loadLegacyVault();
+  if (!legacyVault) {
+    return createEmptyPortal();
   }
+
+  const portalData = createEmptyPortal();
+  portalData.users[DEFAULT_GMAIL] = {
+    name: "LifeVault User",
+    gmail: DEFAULT_GMAIL,
+    secretType: "passcode",
+    secret: legacyVault.passcode || DEFAULT_PASSCODE,
+    vault: normalizeVault(legacyVault),
+  };
+  portalData.lastEmail = DEFAULT_GMAIL;
+  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(portalData));
+  return portalData;
+}
+
+function createEmptyPortal() {
+  return {
+    lastEmail: "",
+    users: {},
+  };
+}
+
+function normalizePortal(saved) {
+  const portalData = createEmptyPortal();
+  portalData.lastEmail = saved.lastEmail || "";
+
+  Object.values(saved.users || {}).forEach((user) => {
+    if (!user.gmail) {
+      return;
+    }
+
+    const gmail = user.gmail.trim().toLowerCase();
+    portalData.users[gmail] = {
+      name: user.name || "LifeVault User",
+      gmail,
+      secretType: user.secretType || "passcode",
+      secret: user.secret || DEFAULT_PASSCODE,
+      vault: normalizeVault(user.vault || emptyVault),
+    };
+  });
+
+  if (!portalData.users[portalData.lastEmail]) {
+    portalData.lastEmail = Object.keys(portalData.users)[0] || "";
+  }
+
+  return portalData;
+}
+
+function loadLegacyVault() {
+  for (const key of LEGACY_STORAGE_KEYS) {
+    const saved = localStorage.getItem(key);
+    if (!saved) {
+      continue;
+    }
+
+    try {
+      return JSON.parse(saved);
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
 }
 
 function normalizeVault(saved) {
   const normalized = structuredClone(emptyVault);
-  normalized.passcode = saved.passcode || DEFAULT_PASSCODE;
   normalized.emergency = { ...normalized.emergency, ...(saved.emergency || {}) };
 
   if (Array.isArray(saved.records)) {
@@ -90,75 +168,66 @@ function normalizeVault(saved) {
   }
 
   normalized.records = [
-    ...(saved.capsules || []).map((item) => ({
-      id: item.id || crypto.randomUUID(),
+    ...(saved.capsules || []).map((item) => normalizeRecord({
+      id: item.id,
       type: "future",
       title: item.title,
       mood: "Calm",
       tags: "future, message",
-      unlockDate: item.unlockDate,
+      unlockDate: normalizeDate(item.unlockDate),
       outcome: "Pending",
       stress: 5,
       energy: 5,
       decision: "",
       body: item.message,
-      createdAt: item.createdAt || todayIso(),
+      createdAt: normalizeDate(item.createdAt),
     })),
-    ...(saved.dreams || []).map((item) => ({
-      id: item.id || crypto.randomUUID(),
+    ...(saved.dreams || []).map((item) => normalizeRecord({
+      id: item.id,
       type: "dream",
       title: item.title,
       mood: item.mood,
       tags: item.keywords,
-      unlockDate: "",
       outcome: "Neutral",
-      stress: 5,
-      energy: 5,
-      decision: "",
       body: item.notes,
-      createdAt: item.createdAt || todayIso(),
+      createdAt: normalizeDate(item.createdAt),
     })),
-    ...(saved.legacyNotes || []).map((item) => ({
-      id: item.id || crypto.randomUUID(),
+    ...(saved.legacyNotes || []).map((item) => normalizeRecord({
+      id: item.id,
       type: "legacy",
       title: item.title,
       mood: "Calm",
       tags: item.category,
-      unlockDate: "",
       outcome: "Pending",
-      stress: 5,
-      energy: 5,
       decision: item.category,
       body: item.message,
-      createdAt: item.createdAt || todayIso(),
+      createdAt: normalizeDate(item.createdAt),
     })),
-    ...(saved.memories || []).map((item) => ({
-      id: item.id || crypto.randomUUID(),
+    ...(saved.memories || []).map((item) => normalizeRecord({
+      id: item.id,
       type: "memory",
       title: item.title,
       mood: "Happy",
       tags: item.category,
-      unlockDate: "",
       outcome: "Good",
       stress: 3,
       energy: 7,
       decision: item.category,
       body: item.message,
-      createdAt: item.createdAt || todayIso(),
+      createdAt: normalizeDate(item.createdAt),
     })),
-    ...(saved.blackBoxEvents || []).map((item) => ({
-      id: item.id || crypto.randomUUID(),
+    ...(saved.blackBoxEvents || []).map((item) => normalizeRecord({
+      id: item.id,
       type: "event",
       title: item.title,
       mood: item.mood,
       tags: "black box, life event",
-      unlockDate: "",
       outcome: item.outcome,
       stress: item.stress,
       energy: item.energy,
       decision: item.decision,
       body: item.notes,
-      createdAt: item.createdAt || todayIso(),
+      createdAt: normalizeDate(item.createdAt),
     })),
   ];
 
@@ -172,34 +241,86 @@ function normalizeRecord(record) {
     title: record.title || "Untitled Record",
     mood: record.mood || "Calm",
     tags: record.tags || "",
-    unlockDate: record.unlockDate || "",
+    unlockDate: normalizeDate(record.unlockDate || ""),
     outcome: record.outcome || "Pending",
     stress: record.stress || 5,
     energy: record.energy || 5,
     decision: record.decision || "",
     body: record.body || record.message || record.notes || "",
-    createdAt: record.createdAt || todayIso(),
+    createdAt: normalizeDate(record.createdAt || todayDmy()),
   };
 }
 
-function saveVault() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(vault));
+function getActiveAccount() {
+  return portal.users[activeEmail] || null;
 }
 
-function todayIso() {
-  return new Date().toISOString().slice(0, 10);
+function savePortal() {
+  const activeAccount = getActiveAccount();
+  if (activeAccount) {
+    activeAccount.vault = vault;
+  }
+  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(portal));
+}
+
+function todayDmy() {
+  const now = new Date();
+  return [
+    String(now.getDate()).padStart(2, "0"),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    now.getFullYear(),
+  ].join("-");
+}
+
+function normalizeDate(dateValue) {
+  if (!dateValue) {
+    return "";
+  }
+
+  const value = String(dateValue).trim();
+  const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) {
+    return `${isoMatch[3]}-${isoMatch[2]}-${isoMatch[1]}`;
+  }
+
+  const dmyMatch = value.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  if (dmyMatch) {
+    return value;
+  }
+
+  return value;
+}
+
+function isValidDmy(dateValue) {
+  if (!dateValue) {
+    return true;
+  }
+
+  const parsed = parseDmy(dateValue);
+  return Boolean(parsed);
+}
+
+function parseDmy(dateValue) {
+  const match = String(dateValue || "").trim().match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  if (!match) {
+    return null;
+  }
+
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+    return null;
+  }
+
+  date.setHours(0, 0, 0, 0);
+  return date;
 }
 
 function formatDate(dateValue) {
-  if (!dateValue) {
-    return "No date";
-  }
-
-  return new Date(`${dateValue}T00:00:00`).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  return normalizeDate(dateValue) || "No date";
 }
 
 function daysUntil(dateValue) {
@@ -207,8 +328,13 @@ function daysUntil(dateValue) {
     return 0;
   }
 
-  const today = new Date(`${todayIso()}T00:00:00`);
-  const target = new Date(`${dateValue}T00:00:00`);
+  const target = parseDmy(normalizeDate(dateValue));
+  const today = parseDmy(todayDmy());
+
+  if (!target || !today) {
+    return 0;
+  }
+
   return Math.ceil((target - today) / 86400000);
 }
 
@@ -224,10 +350,10 @@ function escapeHtml(value) {
 function addLifeRecord(record) {
   vault.records.unshift({
     id: crypto.randomUUID(),
-    createdAt: todayIso(),
+    createdAt: todayDmy(),
     ...record,
   });
-  saveVault();
+  savePortal();
   render();
 }
 
@@ -347,6 +473,42 @@ function renderEmergencyCard(target) {
         .join("")}
     </div>
   `;
+}
+
+function configureAuthPanel() {
+  const account = getActiveAccount();
+  const hasSavedAccount = Boolean(account);
+  const isJoin = authMode === "join" || !hasSavedAccount;
+
+  joinFields.classList.toggle("hidden", !isJoin);
+  rememberedUserBox.classList.toggle("hidden", isJoin || !account);
+  switchAuthBtn.classList.toggle("hidden", !hasSavedAccount);
+  authModeLabel.textContent = isJoin ? "Join LifeVault" : "Welcome Back";
+  authTitle.textContent = isJoin ? "Create Vault" : "Open Vault";
+  secretLabel.textContent = isJoin
+    ? secretTypeInput.value === "password" ? "Create Password" : "Create Passcode"
+    : account.secretType === "password" ? "Password" : "Passcode";
+  authSubmitBtn.textContent = isJoin ? "Create and Unlock" : "Unlock";
+  switchAuthBtn.textContent = isJoin ? "Use Saved Vault" : "Create Another Vault";
+
+  if (account) {
+    rememberedUserBox.innerHTML = `
+      <strong>${escapeHtml(account.name)}</strong>
+      <span>${escapeHtml(account.gmail)}</span>
+    `;
+  }
+}
+
+function openVaultFor(email) {
+  activeEmail = email;
+  portal.lastEmail = email;
+  vault = getActiveAccount().vault;
+  savePortal();
+  passcodeInput.value = "";
+  authMessage.textContent = "";
+  lockScreen.classList.add("hidden");
+  vaultScreen.classList.remove("hidden");
+  showSection("dashboard");
 }
 
 function renderDashboard() {
@@ -509,7 +671,7 @@ function showSection(section) {
 }
 
 function render() {
-  todayText.textContent = formatDate(todayIso());
+  todayText.textContent = todayDmy();
   const totalRecords = vault.records.length;
   recordCountText.textContent = `${totalRecords} ${totalRecords === 1 ? "record" : "records"}`;
   renderDashboard();
@@ -521,19 +683,51 @@ function render() {
 
 unlockForm.addEventListener("submit", (event) => {
   event.preventDefault();
-  if (passcodeInput.value !== vault.passcode) {
-    authMessage.textContent = "Incorrect passcode.";
+  const secret = passcodeInput.value.trim();
+
+  if (authMode === "join" || !getActiveAccount()) {
+    const name = nameInput.value.trim();
+    const gmail = gmailInput.value.trim().toLowerCase();
+
+    if (!name || !gmail || !secret) {
+      authMessage.textContent = "Enter name, Gmail, and secret.";
+      return;
+    }
+
+    if (!gmail.endsWith("@gmail.com")) {
+      authMessage.textContent = "Use a valid Gmail address.";
+      return;
+    }
+
+    if (portal.users[gmail]) {
+      authMessage.textContent = "This Gmail already has a vault. Use Saved Vault.";
+      return;
+    }
+
+    portal.users[gmail] = {
+      name,
+      gmail,
+      secretType: secretTypeInput.value,
+      secret,
+      vault: structuredClone(emptyVault),
+    };
+    activeEmail = gmail;
+    openVaultFor(gmail);
     return;
   }
 
-  passcodeInput.value = "";
-  authMessage.textContent = "";
-  lockScreen.classList.add("hidden");
-  vaultScreen.classList.remove("hidden");
-  showSection("dashboard");
+  const account = getActiveAccount();
+  if (!secret || secret !== account.secret) {
+    authMessage.textContent = `Incorrect ${account.secretType}.`;
+    return;
+  }
+
+  openVaultFor(account.gmail);
 });
 
 emergencyAccessBtn.addEventListener("click", () => {
+  const account = getActiveAccount();
+  vault = account?.vault || structuredClone(emptyVault);
   renderEmergencyCard(emergencyDialogContent);
   emergencyDialog.showModal();
 });
@@ -541,14 +735,25 @@ emergencyAccessBtn.addEventListener("click", () => {
 closeEmergencyDialog.addEventListener("click", () => emergencyDialog.close());
 
 lockBtn.addEventListener("click", () => {
+  savePortal();
   vaultScreen.classList.add("hidden");
   lockScreen.classList.remove("hidden");
+  authMode = getActiveAccount() ? "login" : "join";
+  configureAuthPanel();
 });
 
 document.querySelectorAll(".nav-button").forEach((button) => {
   button.addEventListener("click", () => showSection(button.dataset.section));
 });
 
+switchAuthBtn.addEventListener("click", () => {
+  authMode = authMode === "join" ? "login" : "join";
+  authMessage.textContent = "";
+  passcodeInput.value = "";
+  configureAuthPanel();
+});
+
+secretTypeInput.addEventListener("change", configureAuthPanel);
 recordTypeInput.addEventListener("change", updateTypeHint);
 
 document.getElementById("emergencyProfileForm").addEventListener("submit", (event) => {
@@ -562,18 +767,25 @@ document.getElementById("emergencyProfileForm").addEventListener("submit", (even
     contactPhone: document.getElementById("contactPhoneInput").value.trim(),
     routine: document.getElementById("routineInput").value.trim(),
   };
-  saveVault();
+  savePortal();
   render();
 });
 
 document.getElementById("recordForm").addEventListener("submit", (event) => {
   event.preventDefault();
+  const unlockDate = document.getElementById("recordUnlockDateInput").value.trim();
+
+  if (!isValidDmy(unlockDate)) {
+    alert("Enter unlock date in DD-MM-YYYY format.");
+    return;
+  }
+
   addLifeRecord({
     title: document.getElementById("recordTitleInput").value.trim(),
     type: recordTypeInput.value,
     mood: document.getElementById("recordMoodInput").value,
     tags: document.getElementById("recordTagsInput").value.trim(),
-    unlockDate: document.getElementById("recordUnlockDateInput").value,
+    unlockDate,
     outcome: document.getElementById("recordOutcomeInput").value,
     stress: document.getElementById("recordStressInput").value,
     energy: document.getElementById("recordEnergyInput").value,
@@ -586,5 +798,5 @@ document.getElementById("recordForm").addEventListener("submit", (event) => {
   updateTypeHint();
 });
 
-document.getElementById("recordUnlockDateInput").min = todayIso();
+configureAuthPanel();
 render();

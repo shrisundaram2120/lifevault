@@ -3,3 +3,5 @@
 *.o
 *.log
 lifevault_records.txt
+vault_passcode.txt
+remembered_user.txt

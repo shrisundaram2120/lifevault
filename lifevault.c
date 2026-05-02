@@ -6,8 +6,12 @@
 #define TEXT_SIZE 300
 #define TITLE_SIZE 80
 #define NAME_SIZE 60
+#define GMAIL_SIZE 80
+#define SECRET_SIZE 40
 #define DATE_SIZE 12
 #define FILE_NAME "lifevault_records.txt"
+#define PASSCODE_FILE "vault_passcode.txt"
+#define REMEMBERED_FILE "remembered_user.txt"
 
 typedef struct {
     char fullName[NAME_SIZE];
@@ -32,9 +36,22 @@ typedef struct {
     char body[TEXT_SIZE];
 } LifeRecord;
 
+typedef struct {
+    char name[NAME_SIZE];
+    char gmail[GMAIL_SIZE];
+    char secretType[20];
+    char secret[SECRET_SIZE];
+} VaultUser;
+
 void clearInputBuffer(void);
 void readLine(char text[], int size);
 void initializeEmergencyProfile(EmergencyProfile *profile);
+int joinVault(VaultUser *user);
+int loginRememberedUser(VaultUser *user);
+int loginWithGmail(VaultUser *user);
+int findUserByGmail(const char gmail[], VaultUser *user);
+void saveRememberedUser(const char gmail[]);
+int loadRememberedUser(VaultUser *user);
 void createEmergencyProfile(EmergencyProfile *profile);
 void showEmergencyProfile(const EmergencyProfile *profile);
 void addLifeRecord(LifeRecord records[], int *recordCount);
@@ -49,12 +66,12 @@ int todayToNumber(void);
 
 int main(void) {
     EmergencyProfile profile;
+    VaultUser activeUser;
     LifeRecord records[MAX_RECORDS];
     int recordCount = 0;
     int startChoice = 0;
     int choice = 0;
     int unlocked = 0;
-    char passcode[20];
 
     initializeEmergencyProfile(&profile);
 
@@ -64,8 +81,10 @@ int main(void) {
         printf(" Personal Life Record System\n");
         printf("=====================================\n");
         printf("1. View Emergency Card\n");
-        printf("2. Unlock Full Vault\n");
-        printf("3. Exit\n");
+        printf("2. Join / Create Vault\n");
+        printf("3. Login Remembered User\n");
+        printf("4. Login with Gmail\n");
+        printf("5. Exit\n");
         printf("Enter your choice: ");
 
         if (scanf("%d", &startChoice) != 1) {
@@ -78,15 +97,18 @@ int main(void) {
         if (startChoice == 1) {
             showEmergencyProfile(&profile);
         } else if (startChoice == 2) {
-            printf("Enter vault passcode: ");
-            readLine(passcode, sizeof(passcode));
-
-            if (strcmp(passcode, "1234") == 0) {
+            if (joinVault(&activeUser)) {
                 unlocked = 1;
-            } else {
-                printf("Access denied.\n");
             }
         } else if (startChoice == 3) {
+            if (loginRememberedUser(&activeUser)) {
+                unlocked = 1;
+            }
+        } else if (startChoice == 4) {
+            if (loginWithGmail(&activeUser)) {
+                unlocked = 1;
+            }
+        } else if (startChoice == 5) {
             printf("LifeVault closed.\n");
             return 0;
         } else {
@@ -95,7 +117,7 @@ int main(void) {
     } while (!unlocked);
 
     do {
-        printf("\n-------------- LIFEVAULT --------------\n");
+        printf("\n-------------- LIFEVAULT: %s --------------\n", activeUser.name);
         printf("1. Update Emergency Profile\n");
         printf("2. Show Emergency Card\n");
         printf("3. Add Life Record\n");
@@ -163,6 +185,153 @@ void initializeEmergencyProfile(EmergencyProfile *profile) {
     strcpy(profile->routine, "Not added");
 }
 
+int joinVault(VaultUser *user) {
+    VaultUser existingUser;
+
+    printf("\nName: ");
+    readLine(user->name, NAME_SIZE);
+    printf("Gmail: ");
+    readLine(user->gmail, GMAIL_SIZE);
+    printf("Secret type (passcode/password): ");
+    readLine(user->secretType, sizeof(user->secretType));
+    printf("Create %s: ", user->secretType);
+    readLine(user->secret, SECRET_SIZE);
+
+    if (strlen(user->name) == 0 || strlen(user->gmail) == 0 || strlen(user->secret) == 0) {
+        printf("Name, Gmail, and secret are required.\n");
+        return 0;
+    }
+
+    if (findUserByGmail(user->gmail, &existingUser)) {
+        printf("This Gmail already has a vault. Please login instead.\n");
+        return 0;
+    }
+
+    FILE *file = fopen(PASSCODE_FILE, "a");
+    if (file == NULL) {
+        printf("Could not open %s for saving.\n", PASSCODE_FILE);
+        return 0;
+    }
+
+    fprintf(file, "%s|%s|%s|%s\n", user->name, user->gmail, user->secretType, user->secret);
+    fclose(file);
+    saveRememberedUser(user->gmail);
+    printf("Vault created. Your login is saved in %s.\n", PASSCODE_FILE);
+    return 1;
+}
+
+int loginRememberedUser(VaultUser *user) {
+    char enteredSecret[SECRET_SIZE];
+
+    if (!loadRememberedUser(user)) {
+        printf("No remembered user found. Please join or login with Gmail.\n");
+        return 0;
+    }
+
+    printf("Remembered user: %s (%s)\n", user->name, user->gmail);
+    printf("Enter %s: ", user->secretType);
+    readLine(enteredSecret, SECRET_SIZE);
+
+    if (strcmp(enteredSecret, user->secret) == 0) {
+        printf("Vault unlocked.\n");
+        return 1;
+    }
+
+    printf("Incorrect %s.\n", user->secretType);
+    return 0;
+}
+
+int loginWithGmail(VaultUser *user) {
+    char gmail[GMAIL_SIZE];
+    char enteredSecret[SECRET_SIZE];
+
+    printf("\nGmail: ");
+    readLine(gmail, GMAIL_SIZE);
+
+    if (!findUserByGmail(gmail, user)) {
+        printf("No vault found for this Gmail.\n");
+        return 0;
+    }
+
+    printf("Enter %s: ", user->secretType);
+    readLine(enteredSecret, SECRET_SIZE);
+
+    if (strcmp(enteredSecret, user->secret) == 0) {
+        saveRememberedUser(user->gmail);
+        printf("Vault unlocked.\n");
+        return 1;
+    }
+
+    printf("Incorrect %s.\n", user->secretType);
+    return 0;
+}
+
+int findUserByGmail(const char gmail[], VaultUser *user) {
+    FILE *file = fopen(PASSCODE_FILE, "r");
+    char line[260];
+    char *name;
+    char *storedGmail;
+    char *secretType;
+    char *secret;
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        line[strcspn(line, "\n")] = '\0';
+        name = strtok(line, "|");
+        storedGmail = strtok(NULL, "|");
+        secretType = strtok(NULL, "|");
+        secret = strtok(NULL, "|");
+
+        if (name == NULL || storedGmail == NULL || secretType == NULL || secret == NULL) {
+            continue;
+        }
+
+        if (strcmp(storedGmail, gmail) == 0) {
+            strcpy(user->name, name);
+            strcpy(user->gmail, storedGmail);
+            strcpy(user->secretType, secretType);
+            strcpy(user->secret, secret);
+            fclose(file);
+            return 1;
+        }
+    }
+
+    fclose(file);
+    return 0;
+}
+
+void saveRememberedUser(const char gmail[]) {
+    FILE *file = fopen(REMEMBERED_FILE, "w");
+
+    if (file == NULL) {
+        return;
+    }
+
+    fprintf(file, "%s\n", gmail);
+    fclose(file);
+}
+
+int loadRememberedUser(VaultUser *user) {
+    FILE *file = fopen(REMEMBERED_FILE, "r");
+    char gmail[GMAIL_SIZE];
+
+    if (file == NULL) {
+        return 0;
+    }
+
+    if (fgets(gmail, sizeof(gmail), file) == NULL) {
+        fclose(file);
+        return 0;
+    }
+
+    fclose(file);
+    gmail[strcspn(gmail, "\n")] = '\0';
+    return findUserByGmail(gmail, user);
+}
+
 void createEmergencyProfile(EmergencyProfile *profile) {
     printf("\nFull name: ");
     readLine(profile->fullName, NAME_SIZE);
@@ -210,7 +379,7 @@ void addLifeRecord(LifeRecord records[], int *recordCount) {
     readLine(record->mood, sizeof(record->mood));
     printf("Tags or keywords: ");
     readLine(record->tags, TEXT_SIZE);
-    printf("Unlock date if future record (YYYY-MM-DD or blank): ");
+    printf("Unlock date if future record (DD-MM-YYYY or blank): ");
     readLine(record->unlockDate, DATE_SIZE);
     printf("Outcome (Good/Neutral/Bad/Pending): ");
     readLine(record->outcome, sizeof(record->outcome));
@@ -403,10 +572,10 @@ int isRecordLocked(const LifeRecord *record) {
 }
 
 int dateToNumber(const char date[]) {
-    int year = 0;
-    int month = 0;
     int day = 0;
-    sscanf(date, "%d-%d-%d", &year, &month, &day);
+    int month = 0;
+    int year = 0;
+    sscanf(date, "%d-%d-%d", &day, &month, &year);
     return year * 10000 + month * 100 + day;
 }
 

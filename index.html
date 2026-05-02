@@ -15,12 +15,34 @@
       </div>
 
       <form id="unlockForm" class="auth-panel">
-        <h2>Open Vault</h2>
+        <p id="authModeLabel" class="eyebrow">Join LifeVault</p>
+        <h2 id="authTitle">Create Vault</h2>
+        <div id="rememberedUserBox" class="account-box hidden"></div>
+        <div id="joinFields" class="join-fields">
+          <label>
+            <span>Name</span>
+            <input id="nameInput" type="text" maxlength="60" autocomplete="name">
+          </label>
+          <label>
+            <span>Gmail</span>
+            <input id="gmailInput" type="email" maxlength="80" autocomplete="email">
+          </label>
+          <label>
+            <span>Secret Preference</span>
+            <select id="secretTypeInput">
+              <option value="passcode">Passcode</option>
+              <option value="password">Password</option>
+            </select>
+          </label>
+        </div>
         <label>
-          <span>Vault Passcode</span>
+          <span id="secretLabel">Passcode</span>
           <input id="passcodeInput" type="password" autocomplete="current-password" required>
         </label>
-        <button class="primary" type="submit">Unlock</button>
+        <div class="auth-actions">
+          <button id="authSubmitBtn" class="primary" type="submit">Create and Unlock</button>
+          <button id="switchAuthBtn" class="secondary" type="button">Use Saved Vault</button>
+        </div>
         <p id="authMessage" class="message"></p>
       </form>
 
@@ -159,7 +181,7 @@
               </label>
               <label>
                 <span>Unlock Date</span>
-                <input id="recordUnlockDateInput" type="date">
+                <input id="recordUnlockDateInput" type="text" maxlength="10" placeholder="DD-MM-YYYY">
               </label>
               <label>
                 <span>Outcome</span>

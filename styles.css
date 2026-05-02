@@ -169,6 +169,30 @@ h3 {
   line-height: 1.45;
 }
 
+.join-fields,
+.auth-actions {
+  display: grid;
+  gap: 14px;
+}
+
+.account-box {
+  padding: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+
+.account-box strong {
+  display: block;
+  margin-bottom: 4px;
+  overflow-wrap: anywhere;
+}
+
+.account-box span {
+  color: var(--muted);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
 .primary {
   background: var(--teal);
   color: #fff;

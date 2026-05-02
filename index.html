@@ -10,7 +10,7 @@
   <main class="app">
     <section id="lockScreen" class="lock-screen">
       <div class="brand-block">
-        <p class="eyebrow">Personal Safety and Diary Vault</p>
+        <p class="eyebrow">Personal Safety and Life Vault</p>
         <h1>LifeVault</h1>
       </div>
 
@@ -48,7 +48,7 @@
 
       <section class="auth-panel emergency-auth">
         <h2>Emergency Access</h2>
-        <p class="helper-text">Open only the emergency card. Private life records stay locked.</p>
+        <p class="helper-text">Open only the emergency card. Private vault sections stay locked.</p>
         <button id="emergencyAccessBtn" class="secondary" type="button">Open Emergency Card</button>
       </section>
     </section>
@@ -62,7 +62,11 @@
         <nav class="nav-tabs" aria-label="Vault sections">
           <button class="nav-button active" type="button" data-section="dashboard">Overview</button>
           <button class="nav-button" type="button" data-section="emergency">Emergency</button>
-          <button class="nav-button" type="button" data-section="recorder">Online Diary</button>
+          <button class="nav-button" type="button" data-section="diary">Diary Portal</button>
+          <button class="nav-button" type="button" data-section="future">Future Messages</button>
+          <button class="nav-button" type="button" data-section="legacy">Legacy</button>
+          <button class="nav-button" type="button" data-section="memory">Memory</button>
+          <button class="nav-button" type="button" data-section="goals">Goals</button>
           <button class="nav-button" type="button" data-section="insights">Insights</button>
         </nav>
         <button id="lockBtn" class="quiet" type="button">Lock Vault</button>
@@ -71,7 +75,7 @@
       <section class="content">
         <header class="content-header">
           <div>
-            <p class="eyebrow">Personal Safety and Private Diary System</p>
+            <p class="eyebrow">Personal Safety and Life Vault System</p>
             <h2 id="sectionTitle">Overview</h2>
           </div>
           <div class="status-strip">
@@ -80,29 +84,28 @@
           </div>
         </header>
 
-        <section id="dashboardSection" class="section-grid">
-          <article class="metric-panel accent-red">
-            <span>Emergency Profile</span>
-            <strong id="emergencyStatus">Incomplete</strong>
-          </article>
-          <article class="metric-panel accent-amber">
-            <span>Locked Future Records</span>
-            <strong id="lockedCapsuleCount">0</strong>
-          </article>
-          <article class="metric-panel accent-green">
-            <span>Pattern Tags</span>
-            <strong id="keywordCount">0</strong>
-          </article>
-          <article class="metric-panel accent-blue">
-            <span>Total Diary Entries</span>
-            <strong id="totalRecordCount">0</strong>
-          </article>
-          <article class="wide-panel">
-            <h3>Diary Snapshot</h3>
-            <div id="prioritySnapshot" class="summary-list"></div>
-          </article>
-          <article class="wide-panel">
-            <h3>Recent Diary Entries</h3>
+        <section id="dashboardSection" class="module">
+          <div id="portalCards" class="portal-grid"></div>
+          <div class="section-grid dashboard-metrics">
+            <article class="metric-panel accent-red">
+              <span>Emergency Profile</span>
+              <strong id="emergencyStatus">Incomplete</strong>
+            </article>
+            <article class="metric-panel accent-amber">
+              <span>Hidden Future Messages</span>
+              <strong id="lockedFutureCount">0</strong>
+            </article>
+            <article class="metric-panel accent-green">
+              <span>Goal Notes</span>
+              <strong id="goalNoteCount">0</strong>
+            </article>
+            <article class="metric-panel accent-blue">
+              <span>Total Vault Items</span>
+              <strong id="totalRecordCount">0</strong>
+            </article>
+          </div>
+          <article class="wide-panel full-panel">
+            <h3>Recent Vault Activity</h3>
             <div id="recentEntries" class="summary-list"></div>
           </article>
         </section>
@@ -145,64 +148,271 @@
           </article>
         </section>
 
-        <section id="recorderSection" class="module hidden">
-          <div class="timeline-layout">
-            <form id="recordForm" class="form-grid compact-form record-form-panel diary-form">
-              <div class="span-two diary-heading">
-                <p class="eyebrow">Online Diary</p>
-                <h3>New Life Entry</h3>
+        <section id="diarySection" class="module hidden">
+          <article id="diaryProfilePanel" class="portal-panel">
+            <form id="diaryProfileForm" class="form-grid">
+              <div class="span-two">
+                <p class="eyebrow">Diary Front Page</p>
+                <h3>My Details</h3>
               </div>
               <label>
-                <span>Entry Title</span>
-                <input id="recordTitleInput" type="text" maxlength="80" required>
+                <span>Name</span>
+                <input id="diaryProfileNameInput" type="text" maxlength="80" required>
               </label>
               <label>
-                <span>Diary Type</span>
-                <select id="recordTypeInput">
-                  <option value="event">Life Event</option>
-                  <option value="future">Future Message</option>
-                  <option value="dream">Dream Signal</option>
-                  <option value="legacy">Legacy Instruction</option>
-                  <option value="memory">Memory or Goal</option>
-                </select>
+                <span>Age</span>
+                <input id="diaryProfileAgeInput" type="number" min="1" max="120">
               </label>
               <label>
-                <span>Feeling / Mood</span>
-                <select id="recordMoodInput">
-                  <option>Calm</option>
-                  <option>Focused</option>
-                  <option>Happy</option>
-                  <option>Curious</option>
-                  <option>Anxious</option>
-                  <option>Overwhelmed</option>
-                  <option>Angry</option>
-                  <option>Low</option>
-                </select>
+                <span>Date of Birth</span>
+                <input id="diaryProfileDobInput" type="text" maxlength="10" placeholder="DD-MM-YYYY">
               </label>
               <label>
-                <span>Entry Date</span>
-                <input id="recordDateInput" type="text" maxlength="10" placeholder="DD-MM-YYYY" required>
+                <span>Place</span>
+                <input id="diaryProfilePlaceInput" type="text" maxlength="100">
+              </label>
+              <label>
+                <span>Contact / Email</span>
+                <input id="diaryProfileContactInput" type="text" maxlength="120">
+              </label>
+              <label>
+                <span>Personal Quote or Motto</span>
+                <input id="diaryProfileQuoteInput" type="text" maxlength="160">
               </label>
               <label class="span-two">
-                <span>Tags / Keywords</span>
-                <input id="recordTagsInput" type="text" maxlength="140" placeholder="exam, family, health, dream symbol">
+                <span>Short Self-Introduction</span>
+                <textarea id="diaryProfileIntroInput" rows="4"></textarea>
               </label>
-              <label id="recordUnlockDateField" class="span-two hidden">
-                <span>Unlock Date</span>
-                <input id="recordUnlockDateInput" type="text" maxlength="10" placeholder="DD-MM-YYYY">
-              </label>
-              <div id="recordQuestions" class="type-question-grid span-two"></div>
-              <label class="span-two">
-                <span>Extra Diary Note</span>
-                <textarea id="recordBodyInput" rows="6" placeholder="Write anything else exactly like a personal diary page."></textarea>
-              </label>
-              <p id="recordTypeHint" class="form-note span-two"></p>
-              <button class="primary" type="submit">Save Diary Entry</button>
+              <button class="primary" type="submit">Create Diary</button>
             </form>
+          </article>
 
-            <article class="timeline-panel">
-              <h3>Diary Timeline</h3>
-              <div id="recordTimeline" class="record-list"></div>
+          <article id="diaryBookPanel" class="book-shell hidden">
+            <div class="book-toolbar">
+              <button id="previousDiaryPageBtn" class="secondary" type="button">Previous Page</button>
+              <span id="diaryPageIndicator" class="page-indicator">Page 1</span>
+              <button id="nextDiaryPageBtn" class="secondary" type="button">Next Page</button>
+              <button id="addDiaryPageBtn" class="primary" type="button">New Diary Page</button>
+            </div>
+            <div id="diaryBookPage" class="diary-book-page"></div>
+          </article>
+        </section>
+
+        <section id="futureSection" class="module hidden">
+          <div class="portal-layout">
+            <form id="futureForm" class="portal-panel form-grid">
+              <input id="futureEditIdInput" type="hidden">
+              <div class="span-two">
+                <p class="eyebrow">Future Message Portal</p>
+                <h3>Message for Later</h3>
+              </div>
+              <label class="span-two">
+                <span>Future Message</span>
+                <textarea id="futureMessageInput" rows="5" required></textarea>
+              </label>
+              <label>
+                <span>To Whom</span>
+                <input id="futureRecipientInput" type="text" maxlength="100" required>
+              </label>
+              <label>
+                <span>Sender Name</span>
+                <input id="futureSenderInput" type="text" maxlength="100" required>
+              </label>
+              <label>
+                <span>Open Date</span>
+                <input id="futureOpenDateInput" type="text" maxlength="10" placeholder="DD-MM-YYYY" required>
+              </label>
+              <label>
+                <span>Open Time</span>
+                <input id="futureOpenTimeInput" type="time">
+              </label>
+              <label class="span-two">
+                <span>Reason / Purpose</span>
+                <textarea id="futurePurposeInput" rows="3"></textarea>
+              </label>
+              <label class="checkbox-row span-two">
+                <input id="futurePrivacyInput" type="checkbox" checked>
+                <span>Keep private inside vault</span>
+              </label>
+              <button class="primary" type="submit">Save Future Message</button>
+              <button id="futureCancelEditBtn" class="secondary hidden" type="button">Cancel Edit</button>
+            </form>
+            <article class="portal-panel">
+              <h3>Saved Future Messages</h3>
+              <div id="futureList" class="record-list"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="legacySection" class="module hidden">
+          <div class="portal-layout">
+            <form id="legacyForm" class="portal-panel form-grid">
+              <input id="legacyEditIdInput" type="hidden">
+              <div class="span-two">
+                <p class="eyebrow">Legacy Instruction Portal</p>
+                <h3>Asset Instructions</h3>
+              </div>
+              <label>
+                <span>Record Title</span>
+                <input id="legacyTitleInput" type="text" maxlength="100" required>
+              </label>
+              <label>
+                <span>Prepared By</span>
+                <input id="legacyPreparedByInput" type="text" maxlength="100">
+              </label>
+              <fieldset class="asset-picker span-two">
+                <legend>Asset Types</legend>
+                <label><input type="checkbox" value="land" data-asset-option> Land</label>
+                <label><input type="checkbox" value="house" data-asset-option> House</label>
+                <label><input type="checkbox" value="property" data-asset-option> Property</label>
+                <label><input type="checkbox" value="item" data-asset-option> Item</label>
+                <label><input type="checkbox" value="vehicle" data-asset-option> Vehicle</label>
+                <label><input type="checkbox" value="jewellery" data-asset-option> Jewellery</label>
+                <label><input type="checkbox" value="bank" data-asset-option> Bank / Account Note</label>
+                <label><input type="checkbox" value="other" data-asset-option> Other</label>
+              </fieldset>
+              <div id="legacyDynamicFields" class="legacy-dynamic span-two"></div>
+              <label class="span-two">
+                <span>Overall Notes</span>
+                <textarea id="legacyOverallNotesInput" rows="3"></textarea>
+              </label>
+              <button class="primary" type="submit">Save Legacy Record</button>
+              <button id="legacyCancelEditBtn" class="secondary hidden" type="button">Cancel Edit</button>
+            </form>
+            <article class="portal-panel">
+              <h3>Legacy Records</h3>
+              <div id="legacyList" class="record-list"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="memorySection" class="module hidden">
+          <div class="portal-layout">
+            <form id="memoryForm" class="portal-panel form-grid">
+              <input id="memoryEditIdInput" type="hidden">
+              <div class="span-two">
+                <p class="eyebrow">Memory Portal</p>
+                <h3>Memory Card</h3>
+              </div>
+              <label>
+                <span>Memory Type</span>
+                <input id="memoryTypeInput" type="text" maxlength="80" placeholder="Happy, proud, funny, peaceful">
+              </label>
+              <label>
+                <span>Title</span>
+                <input id="memoryTitleInput" type="text" maxlength="100" required>
+              </label>
+              <label>
+                <span>Where It Happened</span>
+                <input id="memoryPlaceInput" type="text" maxlength="120">
+              </label>
+              <label>
+                <span>When It Happened</span>
+                <input id="memoryDateInput" type="text" maxlength="10" placeholder="DD-MM-YYYY">
+              </label>
+              <label class="span-two">
+                <span>Who Was There</span>
+                <input id="memoryPeopleInput" type="text" maxlength="180">
+              </label>
+              <label class="span-two">
+                <span>What Happened</span>
+                <textarea id="memoryWhatInput" rows="4" required></textarea>
+              </label>
+              <label>
+                <span>Feeling Category</span>
+                <select id="memoryFeelingCategoryInput">
+                  <option>Happy</option>
+                  <option>Sad</option>
+                  <option>Emotional</option>
+                  <option>Proud</option>
+                  <option>Funny</option>
+                  <option>Painful</option>
+                  <option>Peaceful</option>
+                  <option>Mixed</option>
+                </select>
+              </label>
+              <label>
+                <span>How It Felt</span>
+                <input id="memoryFeelingInput" type="text" maxlength="160">
+              </label>
+              <label class="span-two">
+                <span>Why This Memory Is Important</span>
+                <textarea id="memoryImportanceInput" rows="3"></textarea>
+              </label>
+              <label>
+                <span>Attachment Note / Link</span>
+                <input id="memoryAttachmentInput" type="text" maxlength="180">
+              </label>
+              <label>
+                <span>Tags</span>
+                <input id="memoryTagsInput" type="text" maxlength="140">
+              </label>
+              <button class="primary" type="submit">Save Memory</button>
+              <button id="memoryCancelEditBtn" class="secondary hidden" type="button">Cancel Edit</button>
+            </form>
+            <article class="portal-panel">
+              <h3>Memory Cards</h3>
+              <div id="memoryList" class="memory-grid"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="goalsSection" class="module hidden">
+          <div class="portal-layout">
+            <form id="goalForm" class="portal-panel form-grid">
+              <input id="goalEditIdInput" type="hidden">
+              <div class="span-two">
+                <p class="eyebrow">Goal Portal</p>
+                <h3>Goal Tracker</h3>
+              </div>
+              <label>
+                <span>Goal Type</span>
+                <select id="goalTypeInput">
+                  <option>Career</option>
+                  <option>Education</option>
+                  <option>Health</option>
+                  <option>Finance</option>
+                  <option>Relationship</option>
+                  <option>Personal Growth</option>
+                  <option>Spiritual</option>
+                  <option>Project / Startup</option>
+                  <option>Other</option>
+                </select>
+              </label>
+              <label>
+                <span>Target Date</span>
+                <input id="goalTargetDateInput" type="text" maxlength="10" placeholder="DD-MM-YYYY">
+              </label>
+              <label class="span-two">
+                <span>Goal</span>
+                <input id="goalTextInput" type="text" maxlength="180" required>
+              </label>
+              <label class="span-two">
+                <span>Why Do You Want To Achieve It?</span>
+                <textarea id="goalReasonInput" rows="3"></textarea>
+              </label>
+              <label>
+                <span>Current Progress</span>
+                <input id="goalProgressInput" type="text" maxlength="120" placeholder="Not started, 40%, ongoing">
+              </label>
+              <label>
+                <span>Measures Already Taken</span>
+                <input id="goalMeasuresInput" type="text" maxlength="180">
+              </label>
+              <label class="span-two">
+                <span>Initiatives Started</span>
+                <textarea id="goalInitiativesInput" rows="3"></textarea>
+              </label>
+              <div class="span-two">
+                <h3>Suggested Next Steps</h3>
+                <div id="goalSuggestionEditor" class="suggestion-editor"></div>
+              </div>
+              <button class="primary" type="submit">Save Goal</button>
+              <button id="goalCancelEditBtn" class="secondary hidden" type="button">Cancel Edit</button>
+            </form>
+            <article class="portal-panel">
+              <h3>Goal Records</h3>
+              <div id="goalList" class="record-list"></div>
             </article>
           </div>
         </section>
@@ -210,7 +420,7 @@
         <section id="insightsSection" class="module hidden">
           <div class="section-grid insight-grid">
             <article class="wide-panel insight-panel">
-              <h3>Diary Analyzer</h3>
+              <h3>Vault Summary</h3>
               <div id="insightSignals" class="pattern-grid"></div>
             </article>
             <article class="wide-panel insight-panel">

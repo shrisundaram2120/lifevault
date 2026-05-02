@@ -1,6 +1,6 @@
 # LifeVault
 
-LifeVault is a personal safety and life-pattern vault.
+LifeVault is a personal safety and life-management vault.
 
 It includes:
 
@@ -8,11 +8,12 @@ It includes:
 - A join/login portal that remembers the user by Gmail
 - Passcode or password preference for each vault user
 - C login details stored in `vault_passcode.txt`
-- Online diary-style Life Records for future messages, dream signals, legacy instructions, memories, goals, and life events
-- Type-specific diary questions so each record asks only what matches its purpose
-- Date-locked future records using `DD-MM-YYYY`
-- Mood, tag, date, diary note, and personal reflection tracking
-- Diary Pattern Analyzer for repeated themes and entries worth revisiting
+- Diary Portal with a diary front page, cover page, personal details page, and unlimited editable diary pages
+- Future Message Portal with hidden messages that unlock by viewing date/time
+- Legacy Instruction Portal with multiple asset sections and dynamic questions for land, house, property, items, vehicles, jewellery, bank notes, and other belongings
+- Memory Portal with memory-card style records for important experiences
+- Goal Portal with progress notes, initiatives, and practical next-step suggestions
+- Insights dashboard for overall vault patterns and entries worth revisiting
 - A C CLI assignment version using structures, pointers, and file handling
 
 ## Website Demo

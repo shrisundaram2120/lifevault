@@ -632,6 +632,10 @@ h3 {
   animation: pageIn 180ms ease;
 }
 
+.book-page .eyebrow {
+  color: #3f6f24;
+}
+
 @keyframes pageIn {
   from {
     transform: rotateY(-4deg);
@@ -697,6 +701,10 @@ h3 {
   background: rgba(255, 254, 251, 0.62);
 }
 
+.book-page .front-page-grid span {
+  color: #445c2a;
+}
+
 .front-page-grid span,
 .record-answer strong,
 .legacy-summary strong {
@@ -716,7 +724,7 @@ h3 {
 }
 
 .diary-intro {
-  color: var(--ink);
+  color: #2e3527;
   line-height: 1.6;
 }
 

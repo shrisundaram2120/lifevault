@@ -1,7 +1,7 @@
 :root {
   --bg: #11130f;
   --ink: #f3f7ed;
-  --muted: #aab3a3;
+  --muted: #c3cdbd;
   --surface: #181c16;
   --surface-2: #22281f;
   --paper: #f7efcf;
@@ -437,16 +437,19 @@ h3 {
   background: var(--surface);
   border: 1px solid var(--line);
   border-left-width: 4px;
+  color: var(--ink);
   box-shadow: none;
 }
 
 .portal-card span {
   color: var(--muted);
   font-size: 0.86rem;
+  font-weight: 700;
 }
 
 .portal-card strong {
   display: block;
+  color: var(--ink);
   font-size: 1.08rem;
   overflow-wrap: anywhere;
 }
